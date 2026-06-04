@@ -2,31 +2,31 @@ using UnityEngine;
 
 public static class HexGridMath
 {
-     /*
-     Direction order:
-     
-              2     1
-            /         \
-          3             0
-            \         /
-              4     5
-     
-     0 = Right
-     1 = TopRight
-     2 = TopLeft
-     3 = Left
-     4 = BottomLeft
-     5 = BottomRight
+    /*
+     Side index -> neighbor offset. The order MUST match the physical layout of
+     the tile mesh's side anchors (DefaultTile prefab), which run counter-
+     clockwise with the side index:
+
+       side 0 = Side_Right        (world ~30 deg)
+       side 1 = Side_TopRight     (world ~90 deg)
+       side 2 = Side_TopLeft      (world ~150 deg)
+       side 3 = Side_Left         (world ~210 deg)
+       side 4 = Side_BottomLeft   (world ~270 deg)
+       side 5 = Side_BottomRight  (world ~330 deg)
+
+     Each entry below is the axial offset of the neighbor that sits at the same
+     world angle as the matching mesh anchor, so the terrain painted on a tile
+     edge is checked against the neighbor that is physically on that edge.
     */
 
     public static readonly HexCoord[] Directions =
     {
-        new HexCoord(1, 0),    // Right
-        new HexCoord(1, -1),   // TopRight
-        new HexCoord(0, -1),   // TopLeft
-        new HexCoord(-1, 0),   // Left
-        new HexCoord(-1, 1),   // BottomLeft
-        new HexCoord(0, 1),    // BottomRight
+        new HexCoord(1, 0),    // side 0  ~30 deg
+        new HexCoord(0, 1),    // side 1  ~90 deg
+        new HexCoord(-1, 1),   // side 2  ~150 deg
+        new HexCoord(-1, 0),   // side 3  ~210 deg
+        new HexCoord(0, -1),   // side 4  ~270 deg
+        new HexCoord(1, -1),   // side 5  ~330 deg
     };
 
     public static HexCoord GetNeighbor(HexCoord coord, int direction)

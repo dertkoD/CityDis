@@ -53,9 +53,9 @@ public class TilePlacementValidator : MonoBehaviour
         int worldSide,
         int rotationSteps)
     {
-        // Matches PlacedTile.GetSideTerrain: a clockwise visual rotation of
-        // rotationSteps maps world side w to local side (w - rotationSteps).
-        int localSide = Mod(worldSide - rotationSteps, 6);
+        // Matches PlacedTile.GetSideTerrain: counter-clockwise mesh anchors plus
+        // a clockwise visual rotation map world side w to local side (w + steps).
+        int localSide = Mod(worldSide + rotationSteps, 6);
         return tileData.GetSide(localSide);
     }
 
