@@ -100,6 +100,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8593155457178517266}
   - component: {fileID: 5815748498245521888}
+  - component: {fileID: 7700002224255387456}
   m_Layer: 6
   m_Name: MarkerTile
   m_TagString: Untagged
@@ -722,3 +723,15 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7700002224255387456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2210071450516010687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5479cb14ae465874081f86230dd51f27, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 

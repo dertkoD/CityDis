@@ -15,7 +15,9 @@ MonoBehaviour:
   entries:
   - terrainType: 0
     material: {fileID: 2100000, guid: 65f6435e990044547937210e23579250, type: 2}
-  - terrainType: 6
-    material: {fileID: 2100000, guid: ac04a36d066f21c47ae04c5db0a0ed6f, type: 2}
-  - terrainType: 5
+  - terrainType: 1
     material: {fileID: 2100000, guid: 726de5cc0e616194c8503bea3b249fd3, type: 2}
+  - terrainType: 2
+    material: {fileID: 2100000, guid: ac04a36d066f21c47ae04c5db0a0ed6f, type: 2}
+  - terrainType: 3
+    material: {fileID: 2100000, guid: 19d13f6d55399f44ab308f04dcf1c263, type: 2}

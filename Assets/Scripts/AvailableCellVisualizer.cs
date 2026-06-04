@@ -33,7 +33,12 @@ public class AvailableCellVisualizer : MonoBehaviour
 
             if (marker == null)
             {
-                marker = markerObject.AddComponent<AvailableCellMarker>();
+                // Add the AvailableCellMarker component to the marker prefab in the inspector.
+                Debug.LogError(
+                    $"'{markerPrefab.name}' is missing an AvailableCellMarker component. " +
+                    "Add it to the marker prefab.");
+                Destroy(markerObject);
+                continue;
             }
 
             marker.Initialize(coord, placementController);
