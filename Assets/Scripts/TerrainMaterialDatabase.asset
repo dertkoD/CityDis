@@ -1,0 +1,21 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c12cd983d0639e74fa2e0907430107fa, type: 3}
+  m_Name: TerrainMaterialDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::TerrainMaterialDatabase
+  entries:
+  - terrainType: 0
+    material: {fileID: 2100000, guid: 65f6435e990044547937210e23579250, type: 2}
+  - terrainType: 6
+    material: {fileID: 2100000, guid: ac04a36d066f21c47ae04c5db0a0ed6f, type: 2}
+  - terrainType: 5
+    material: {fileID: 2100000, guid: 726de5cc0e616194c8503bea3b249fd3, type: 2}

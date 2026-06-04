@@ -1,0 +1,45 @@
+using UnityEngine;
+
+public class PlacedTile : MonoBehaviour
+{
+    public HexCoord Coord { get; private set; }
+
+    private TileDefinition tileDefinition;
+    private int rotationSteps;
+
+    public void Initialize(HexCoord coord, int rotationSteps)
+    {
+        Coord = coord;
+        this.rotationSteps = NormalizeRotationSteps(rotationSteps);
+
+        tileDefinition = GetComponent<TileDefinition>();
+
+        if (tileDefinition == null)
+        {
+            Debug.LogError($"TileDefinition is missing on {gameObject.name}");
+        }
+
+        gameObject.name = $"Tile {coord}";
+    }
+
+    public TerrainType GetSideTerrain(int worldSide)
+    {
+        if (tileDefinition == null)
+        {
+            return TerrainType.Empty;
+        }
+
+        int localSide = Mod(worldSide + rotationSteps, 6);
+        return tileDefinition.GetLocalSide(localSide);
+    }
+
+    private int NormalizeRotationSteps(int steps)
+    {
+        return Mod(steps, 6);
+    }
+
+    private int Mod(int value, int modulo)
+    {
+        return ((value % modulo) + modulo) % modulo;
+    }
+}
