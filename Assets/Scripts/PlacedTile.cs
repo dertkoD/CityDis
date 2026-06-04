@@ -29,7 +29,9 @@ public class PlacedTile : MonoBehaviour
             return TerrainType.Empty;
         }
 
-        int localSide = Mod(worldSide + rotationSteps, 6);
+        // The visual is rotated clockwise by rotationSteps * 60 degrees, so the
+        // terrain shown on a world-facing side comes from local side (world - steps).
+        int localSide = Mod(worldSide - rotationSteps, 6);
         return tileDefinition.GetLocalSide(localSide);
     }
 
