@@ -29,6 +29,9 @@ public class PlacedTile : MonoBehaviour
             return TerrainType.Empty;
         }
 
+        // The mesh side anchors run counter-clockwise with the index, while the
+        // visual is rotated clockwise by rotationSteps * 60 degrees. Combined,
+        // the terrain shown on world side w comes from local side (w + steps).
         int localSide = Mod(worldSide + rotationSteps, 6);
         return tileDefinition.GetLocalSide(localSide);
     }

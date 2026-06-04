@@ -202,6 +202,7 @@ GameObject:
   - component: {fileID: 2910172174121156425}
   - component: {fileID: 6911428660689157370}
   - component: {fileID: 3639845528211447391}
+  - component: {fileID: 7700001114255387456}
   m_Layer: 6
   m_Name: DefaultTile
   m_TagString: Untagged
@@ -260,8 +261,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TileDefinition
   tileData:
-    center: 8
-    sides: 080000000800000008000000080000000800000008000000
+    center: 3
+    sides: 030000000300000003000000030000000300000003000000
 --- !u!114 &3639845528211447391
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -283,6 +284,18 @@ MonoBehaviour:
   - {fileID: 930792967706825649}
   - {fileID: 6899376994171218587}
   - {fileID: 9152892484612854538}
+--- !u!114 &7700001114255387456
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2210071450516010687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 996c3e699d73a6e41826eb66cd909c03, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2241018040693316152
 GameObject:
   m_ObjectHideFlags: 0

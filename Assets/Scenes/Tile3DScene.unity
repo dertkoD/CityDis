@@ -192,6 +192,7 @@ GameObject:
   - component: {fileID: 330585545}
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
+  - component: {fileID: 330585548}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -318,6 +319,30 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!114 &330585548
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 330585543}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9aabef2017934cf5b076c318f0295b83, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::CameraController
+  groundHeight: 0
+  fallbackFocusPoint: {x: 0, y: 0, z: 0}
+  keyboardPanSpeed: 1.5
+  dragPanSpeed: 1.5
+  zoomSpeed: 0.5
+  minDistance: 0.4
+  maxDistance: 6
+  defaultDistance: 1.2
+  orbitSpeed: 0.2
+  minPitch: 25
+  maxPitch: 80
+  smoothing: 10
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -548,6 +573,7 @@ GameObject:
   - component: {fileID: 981011460}
   - component: {fileID: 981011463}
   - component: {fileID: 981011464}
+  - component: {fileID: 981011465}
   m_Layer: 0
   m_Name: GameBoard
   m_TagString: Untagged
@@ -572,6 +598,7 @@ MonoBehaviour:
   availableCellVisualizer: {fileID: 981011455}
   currentTileController: {fileID: 981011460}
   tilePlacementValidator: {fileID: 981011462}
+  scoreManager: {fileID: 981011465}
   startTilePrefab: {fileID: 2210071450516010687, guid: 9d234bfaa2865284e98741f8477f3c8a, type: 3}
   orientation: 1
   hexSize: 0.1
@@ -714,10 +741,31 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67d4aff2c911bc40b1078039c137e33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TileDataGenerator
-  riverTileChance: 0.15
-  railroadTileChance: 0.1
+  emptyCenterChance: 0.08
+  plainWeight: 1
+  riverWeight: 0.25
+  railroadWeight: 0.18
   minSidesMatchingCenter: 2
   maxTerrainTypesPerTile: 4
+  maxGenerationAttempts: 12
+--- !u!114 &981011465
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981011453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: dee749b8e2ca46e0ad07bd9eb164951f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
+  boardGrid: {fileID: 981011457}
+  pointsPerTile: 1
+  pointsPerMatchingEdge: 2
+  perfectPlacementBonus: 10
+  closedGroupBonusPerTile: 15
+  showScoreOnGui: 1
 --- !u!1 &1688473970
 GameObject:
   m_ObjectHideFlags: 0

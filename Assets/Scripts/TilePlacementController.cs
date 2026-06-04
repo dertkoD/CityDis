@@ -9,6 +9,9 @@ public class TilePlacementController : MonoBehaviour
     [SerializeField] private CurrentTileController currentTileController;
     [SerializeField] private TilePlacementValidator tilePlacementValidator;
 
+    [Tooltip("Optional. If assigned, placements are scored.")]
+    [SerializeField] private ScoreManager scoreManager;
+
     [Header("Start Tile")]
     [SerializeField] private GameObject startTilePrefab;
 
@@ -28,6 +31,11 @@ public class TilePlacementController : MonoBehaviour
     {
         availableCellManager.Clear();
 
+        if (scoreManager != null)
+        {
+            scoreManager.ResetScore();
+        }
+
         HexCoord startCoord = new HexCoord(0, 0);
 
         TileData startTileData = currentTileController.GenerateRandomTileData();
@@ -39,6 +47,11 @@ public class TilePlacementController : MonoBehaviour
             Quaternion.identity,
             0
         );
+
+        if (scoreManager != null)
+        {
+            scoreManager.OnTilePlaced(startCoord);
+        }
 
         availableCellManager.UpdateAfterTilePlaced(startCoord, boardGrid);
 
@@ -93,6 +106,11 @@ public class TilePlacementController : MonoBehaviour
             rotationSteps
         );
 
+        if (scoreManager != null)
+        {
+            scoreManager.OnTilePlaced(coord);
+        }
+
         availableCellManager.UpdateAfterTilePlaced(coord, boardGrid);
 
         currentTileController.GenerateNextTile();
@@ -139,7 +157,12 @@ public class TilePlacementController : MonoBehaviour
 
         if (placedTile == null)
         {
-            placedTile = tileObject.AddComponent<PlacedTile>();
+            // Add the PlacedTile component to the tile prefab in the inspector.
+            Debug.LogError(
+                $"'{tilePrefab.name}' is missing a PlacedTile component. " +
+                "Add it to the tile prefab.");
+            Destroy(tileObject);
+            return;
         }
 
         placedTile.Initialize(coord, rotationSteps);
