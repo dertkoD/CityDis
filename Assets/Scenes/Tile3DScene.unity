@@ -824,20 +824,20 @@ MonoBehaviour:
   labelParent: {fileID: 419231119}
   orientation: 1
   hexSize: 0.1
-  heightOffset: 0.02
-  labelScale: 0.02
+  heightOffset: 0.1
+  labelScale: 0.05
   flatOnGround: 1
   minGroupSizeToShow: 2
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
   familyColors:
   - family: 1
-    color: {r: 0.19215688, g: 0.23529413, b: 0.7490196, a: 1}
+    color: {r: 0.051397298, g: 0.990566, b: 0.7780092, a: 1}
   - family: 3
-    color: {r: 0.15294118, g: 0.34117648, b: 0.18431373, a: 1}
+    color: {r: 0.098681934, g: 0.990566, b: 0.014017418, a: 1}
   - family: 2
-    color: {r: 0.19607845, g: 0.20392159, b: 0.21960786, a: 1}
+    color: {r: 0.990566, g: 0, b: 0, a: 1}
   - family: 4
-    color: {r: 0.2509804, g: 0.34901962, b: 0.34509805, a: 1}
+    color: {r: 0.9811321, g: 0.7677646, b: 0.023139905, a: 1}
 --- !u!114 &981011467
 MonoBehaviour:
   m_ObjectHideFlags: 0
