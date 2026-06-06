@@ -20,11 +20,14 @@ public class GroupLabel : MonoBehaviour
         label.color = color;
     }
 
-    public void Show(Vector3 worldPosition, Quaternion rotation)
+    // Positioned in the PARENT's local space (the board), so labels line up with
+    // the tiles, which are also placed using local positions.
+    public void Show(Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
     {
         Transform t = transform;
-        t.position = worldPosition;
-        t.rotation = rotation;
+        t.localPosition = localPosition;
+        t.localRotation = localRotation;
+        t.localScale = localScale;
 
         if (!gameObject.activeSelf)
         {

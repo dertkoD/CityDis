@@ -28,6 +28,8 @@ public class GroupVisualizer : MonoBehaviour
     [Header("References")]
     [SerializeField] private GroupTracker groupTracker;
     [SerializeField] private GameObject labelPrefab;
+    [Tooltip("Set this to the SAME transform used as 'tileParent' on the " +
+             "TilePlacementController, so labels line up with the tiles.")]
     [SerializeField] private Transform labelParent;
 
     [Header("Grid (match TilePlacementController)")]
@@ -35,9 +37,12 @@ public class GroupVisualizer : MonoBehaviour
     [SerializeField] private float hexSize = 0.1f;
 
     [Header("Label placement")]
-    [Tooltip("Height above the ground plane where labels float.")]
-    [SerializeField] private float heightOffset = 0.05f;
-    [Tooltip("Lay labels flat on the ground (read from above) instead of standing upright.")]
+    [Tooltip("Height above the board where labels float (in the board's local space).")]
+    [SerializeField] private float heightOffset = 0.01f;
+    [Tooltip("Uniform local scale of each label. TextMeshPro text is huge by " +
+             "default, so on a small board (hexSize ~0.1) this must be tiny.")]
+    [SerializeField] private float labelScale = 0.01f;
+    [Tooltip("Lay labels flat on the board (read from above) instead of standing upright.")]
     [SerializeField] private bool flatOnGround = true;
     [Tooltip("Only show a label once a group reaches at least this many tiles.")]
     [SerializeField] private int minGroupSizeToShow = 2;
@@ -102,11 +107,11 @@ public class GroupVisualizer : MonoBehaviour
 
                 used++;
 
-                Vector3 position = group.GetWorldCentroid(hexSize, orientation);
+                Vector3 position = group.GetLayoutCentroid(hexSize, orientation);
                 position.y += heightOffset;
 
                 label.SetValue(size, GetColor(group.Family));
-                label.Show(position, rotation);
+                label.Show(position, rotation, Vector3.one * labelScale);
             }
         }
 

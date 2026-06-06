@@ -82,9 +82,10 @@ public class TileGroup
 
     public bool IsClosed => OpenEnds == 0 && sections.Count > 0;
 
-    // Average world position of the tiles in this group, used to anchor a
-    // group-size label. Returns the centroid on the ground plane (y = 0).
-    public Vector3 GetWorldCentroid(float hexSize, HexOrientation orientation)
+    // Average board-layout position of the tiles in this group, used to anchor a
+    // group-size label. Uses the same HexToWorld layout that places the tiles, so
+    // the result is in the board parent's LOCAL space (y = 0 on the board plane).
+    public Vector3 GetLayoutCentroid(float hexSize, HexOrientation orientation)
     {
         if (tiles.Count == 0)
         {
