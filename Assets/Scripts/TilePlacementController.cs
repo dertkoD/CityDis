@@ -9,6 +9,9 @@ public class TilePlacementController : MonoBehaviour
     [SerializeField] private CurrentTileController currentTileController;
     [SerializeField] private TilePlacementValidator tilePlacementValidator;
 
+    [Tooltip("Optional. If assigned, terrain groups are recomputed after each placement.")]
+    [SerializeField] private GroupTracker groupTracker;
+
     [Tooltip("Optional. If assigned, placements are scored.")]
     [SerializeField] private ScoreManager scoreManager;
 
@@ -47,6 +50,11 @@ public class TilePlacementController : MonoBehaviour
             Quaternion.identity,
             0
         );
+
+        if (groupTracker != null)
+        {
+            groupTracker.Recompute();
+        }
 
         if (scoreManager != null)
         {
@@ -105,6 +113,11 @@ public class TilePlacementController : MonoBehaviour
             currentTileController.CurrentRotation,
             rotationSteps
         );
+
+        if (groupTracker != null)
+        {
+            groupTracker.Recompute();
+        }
 
         if (scoreManager != null)
         {

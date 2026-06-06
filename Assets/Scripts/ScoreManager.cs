@@ -17,6 +17,10 @@ public class ScoreManager : MonoBehaviour
     [Header("References")]
     [SerializeField] private BoardGrid boardGrid;
 
+    [Tooltip("Optional. If assigned, the already-computed groups are reused " +
+             "instead of rebuilding them here.")]
+    [SerializeField] private GroupTracker groupTracker;
+
     [Header("Scoring")]
     [SerializeField] private int pointsPerTile = 1;
     [SerializeField] private int pointsPerMatchingEdge = 2;
@@ -122,7 +126,10 @@ public class ScoreManager : MonoBehaviour
             return 0;
         }
 
-        List<TileGroup> groups = groupManager.BuildGroups(boardGrid);
+        IReadOnlyList<TileGroup> groups = groupTracker != null
+            ? groupTracker.CurrentGroups
+            : groupManager.BuildGroups(boardGrid);
+
         int bonus = 0;
 
         foreach (TileGroup group in groups)

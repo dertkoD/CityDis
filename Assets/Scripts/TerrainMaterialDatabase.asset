@@ -24,6 +24,8 @@ MonoBehaviour:
   - terrainType: 3
     material: {fileID: 2100000, guid: fb2e3972f2626e148b99850242f3213f, type: 2}
   - terrainType: 6
-    material: {fileID: 2100000, guid: 19d13f6d55399f44ab308f04dcf1c263, type: 2}
+    material: {fileID: 2100000, guid: 6945836368d679a46a227fc3386cc0ce, type: 2}
   - terrainType: 4
     material: {fileID: 2100000, guid: 79509569fab262f409167a5927393f1e, type: 2}
+  - terrainType: 5
+    material: {fileID: 2100000, guid: 19d13f6d55399f44ab308f04dcf1c263, type: 2}

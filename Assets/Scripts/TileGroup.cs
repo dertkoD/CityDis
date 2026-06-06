@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 // Identifies one edge ("section") of a placed tile: the tile coordinate plus
 // the world-facing side index (0..5).
@@ -37,6 +38,10 @@ public class TileGroup
 {
     public string Id { get; }
     public TerrainType TerrainType { get; }
+
+    // The scoring family this group belongs to (e.g. river + water bodies share
+    // the Water family).
+    public TerrainGroupFamily Family => TerrainCatalog.GroupFamily(TerrainType);
 
     private readonly HashSet<EdgeKey> sections = new();
     private readonly HashSet<HexCoord> tiles = new();
@@ -76,6 +81,25 @@ public class TileGroup
     }
 
     public bool IsClosed => OpenEnds == 0 && sections.Count > 0;
+
+    // Average world position of the tiles in this group, used to anchor a
+    // group-size label. Returns the centroid on the ground plane (y = 0).
+    public Vector3 GetWorldCentroid(float hexSize, HexOrientation orientation)
+    {
+        if (tiles.Count == 0)
+        {
+            return Vector3.zero;
+        }
+
+        Vector3 sum = Vector3.zero;
+
+        foreach (HexCoord tile in tiles)
+        {
+            sum += HexGridMath.HexToWorld(tile, hexSize, orientation);
+        }
+
+        return sum / tiles.Count;
+    }
 
     // Stable signature used to award a closed group's bonus only once.
     public string GetSignature()
