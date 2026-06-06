@@ -470,6 +470,37 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
+--- !u!1 &419231118
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 419231119}
+  m_Layer: 0
+  m_Name: LabelHolder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &419231119
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 419231118}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.3398, y: -0, z: 0.02024}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &671951284
 GameObject:
   m_ObjectHideFlags: 0
@@ -574,6 +605,8 @@ GameObject:
   - component: {fileID: 981011463}
   - component: {fileID: 981011464}
   - component: {fileID: 981011465}
+  - component: {fileID: 981011467}
+  - component: {fileID: 981011466}
   m_Layer: 0
   m_Name: GameBoard
   m_TagString: Untagged
@@ -598,6 +631,7 @@ MonoBehaviour:
   availableCellVisualizer: {fileID: 981011455}
   currentTileController: {fileID: 981011460}
   tilePlacementValidator: {fileID: 981011462}
+  groupTracker: {fileID: 0}
   scoreManager: {fileID: 981011465}
   startTilePrefab: {fileID: 2210071450516010687, guid: 9d234bfaa2865284e98741f8477f3c8a, type: 3}
   orientation: 1
@@ -743,10 +777,15 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::TileDataGenerator
   emptyCenterChance: 0.08
   plainWeight: 1
+  forestWeight: 0.6
+  mountainsWeight: 0.4
   riverWeight: 0.25
   railroadWeight: 0.18
+  waterWeight: 0.2
   minSidesMatchingCenter: 2
   maxTerrainTypesPerTile: 4
+  waterMinSides: 1
+  waterMaxSides: 2
   maxGenerationAttempts: 12
 --- !u!114 &981011465
 MonoBehaviour:
@@ -761,11 +800,55 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ScoreManager
   boardGrid: {fileID: 981011457}
+  groupTracker: {fileID: 981011467}
   pointsPerTile: 1
   pointsPerMatchingEdge: 2
   perfectPlacementBonus: 10
   closedGroupBonusPerTile: 15
   showScoreOnGui: 1
+--- !u!114 &981011466
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981011453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: db85ca5dcd3f4f3a98a3326355f97aa2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroupVisualizer
+  groupTracker: {fileID: 981011467}
+  labelPrefab: {fileID: 6859062670375226605, guid: d81aeb6a55a64804bb919595e00a6a60, type: 3}
+  labelParent: {fileID: 419231119}
+  orientation: 1
+  hexSize: 0.1
+  heightOffset: 0.05
+  flatOnGround: 1
+  minGroupSizeToShow: 2
+  defaultColor: {r: 1, g: 1, b: 1, a: 1}
+  familyColors:
+  - family: 1
+    color: {r: 0.19215688, g: 0.23529413, b: 0.7490196, a: 1}
+  - family: 3
+    color: {r: 0.15294118, g: 0.34117648, b: 0.18431373, a: 1}
+  - family: 2
+    color: {r: 0.19607845, g: 0.20392159, b: 0.21960786, a: 1}
+  - family: 4
+    color: {r: 0.2509804, g: 0.34901962, b: 0.34509805, a: 1}
+--- !u!114 &981011467
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981011453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4305b137c2da4c79b6a312c6da986a45, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GroupTracker
+  boardGrid: {fileID: 981011457}
 --- !u!1 &1688473970
 GameObject:
   m_ObjectHideFlags: 0
@@ -869,3 +952,4 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 981011458}
+  - {fileID: 419231119}
