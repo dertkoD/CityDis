@@ -733,8 +733,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CurrentTileController
   baseTilePrefab: {fileID: 2210071450516010687, guid: 9d234bfaa2865284e98741f8477f3c8a, type: 3}
   tileDataGenerator: {fileID: 981011464}
-  previewAnchor: {fileID: 1880575911}
-  previewScale: {x: 10, y: 10, z: 10}
+  deckSize: 50
+  infiniteDeck: 0
+  previewCount: 3
 --- !u!114 &981011462
 MonoBehaviour:
   m_ObjectHideFlags: 0
