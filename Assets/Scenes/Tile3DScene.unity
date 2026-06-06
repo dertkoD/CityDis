@@ -824,8 +824,9 @@ MonoBehaviour:
   labelParent: {fileID: 419231119}
   orientation: 1
   hexSize: 0.1
-  heightOffset: 0
-  flatOnGround: 0
+  heightOffset: 0.02
+  labelScale: 0.02
+  flatOnGround: 1
   minGroupSizeToShow: 2
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
   familyColors:
