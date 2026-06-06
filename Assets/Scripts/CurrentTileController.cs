@@ -48,6 +48,10 @@ public class CurrentTileController : MonoBehaviour
     // Raised whenever the deck content changes (reset / advanced), so previews refresh.
     public event Action DeckChanged;
 
+    // Raised whenever the current tile is rotated (Q / E), so previews can spin
+    // the current tile without rebuilding anything.
+    public event Action RotationChanged;
+
     // A standalone tile used to seed the board (the auto-placed starting tile). It
     // does NOT consume the deck.
     public TileData GenerateRandomTileData()
@@ -85,11 +89,13 @@ public class CurrentTileController : MonoBehaviour
     public void RotateRight()
     {
         rotationSteps = (rotationSteps + 1) % 6;
+        RotationChanged?.Invoke();
     }
 
     public void RotateLeft()
     {
         rotationSteps = (rotationSteps + 5) % 6;
+        RotationChanged?.Invoke();
     }
 
     // Returns up to `max` upcoming tiles (current first), for the preview panel.

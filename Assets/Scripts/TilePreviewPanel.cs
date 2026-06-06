@@ -62,6 +62,7 @@ public class TilePreviewPanel : MonoBehaviour
         if (tileController != null)
         {
             tileController.DeckChanged += Refresh;
+            tileController.RotationChanged += UpdateCurrentRotation;
             Refresh();
         }
     }
@@ -71,6 +72,7 @@ public class TilePreviewPanel : MonoBehaviour
         if (tileController != null)
         {
             tileController.DeckChanged -= Refresh;
+            tileController.RotationChanged -= UpdateCurrentRotation;
         }
     }
 
@@ -105,6 +107,12 @@ public class TilePreviewPanel : MonoBehaviour
             {
                 TileObjectSetup.ApplyData(instance, upcoming[i]);
 
+                // Only slot 0 (the current tile) follows the player's rotation;
+                // the upcoming tiles are shown unrotated.
+                instance.transform.localRotation = i == 0
+                    ? tileController.CurrentRotation
+                    : Quaternion.identity;
+
                 if (!instance.activeSelf)
                 {
                     instance.SetActive(true);
@@ -114,6 +122,21 @@ public class TilePreviewPanel : MonoBehaviour
             {
                 instance.SetActive(false);
             }
+        }
+    }
+
+    private void UpdateCurrentRotation()
+    {
+        if (slotInstances == null || slotInstances.Length == 0)
+        {
+            return;
+        }
+
+        GameObject current = slotInstances[0];
+
+        if (current != null)
+        {
+            current.transform.localRotation = tileController.CurrentRotation;
         }
     }
 
