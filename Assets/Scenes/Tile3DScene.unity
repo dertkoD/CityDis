@@ -494,12 +494,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 419231118}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.3398, y: -0, z: 0.02024}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 981011458}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &671951284
 GameObject:
@@ -631,7 +631,7 @@ MonoBehaviour:
   availableCellVisualizer: {fileID: 981011455}
   currentTileController: {fileID: 981011460}
   tilePlacementValidator: {fileID: 981011462}
-  groupTracker: {fileID: 0}
+  groupTracker: {fileID: 981011467}
   scoreManager: {fileID: 981011465}
   startTilePrefab: {fileID: 2210071450516010687, guid: 9d234bfaa2865284e98741f8477f3c8a, type: 3}
   orientation: 1
@@ -692,6 +692,7 @@ Transform:
   m_Children:
   - {fileID: 2009534736}
   - {fileID: 671951285}
+  - {fileID: 419231119}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &981011459
@@ -823,8 +824,8 @@ MonoBehaviour:
   labelParent: {fileID: 419231119}
   orientation: 1
   hexSize: 0.1
-  heightOffset: 0.05
-  flatOnGround: 1
+  heightOffset: 0
+  flatOnGround: 0
   minGroupSizeToShow: 2
   defaultColor: {r: 1, g: 1, b: 1, a: 1}
   familyColors:
@@ -952,4 +953,3 @@ SceneRoots:
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 981011458}
-  - {fileID: 419231119}
