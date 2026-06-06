@@ -39,6 +39,8 @@ public class TilePlacementController : MonoBehaviour
             scoreManager.ResetScore();
         }
 
+        currentTileController.ResetDeck();
+
         HexCoord startCoord = new HexCoord(0, 0);
 
         TileData startTileData = currentTileController.GenerateRandomTileData();
@@ -63,13 +65,16 @@ public class TilePlacementController : MonoBehaviour
 
         availableCellManager.UpdateAfterTilePlaced(startCoord, boardGrid);
 
-        currentTileController.GenerateNextTile();
-
         RefreshAvailableMarkers();
     }
 
     public bool CanPlaceCurrentTileAt(HexCoord coord)
     {
+        if (!currentTileController.HasCurrentTile)
+        {
+            return false;
+        }
+
         if (!availableCellManager.IsAvailable(coord))
         {
             return false;
@@ -126,7 +131,7 @@ public class TilePlacementController : MonoBehaviour
 
         availableCellManager.UpdateAfterTilePlaced(coord, boardGrid);
 
-        currentTileController.GenerateNextTile();
+        currentTileController.AdvanceToNextTile();
 
         RefreshAvailableMarkers();
     }
