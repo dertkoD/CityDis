@@ -75,7 +75,16 @@ public class TileGroup
         OpenEnds += other.OpenEnds;
     }
 
-    public int GetSize()
+    // The group size in SUB-SECTIONS (the per-edge sub-parts of the hexes), which
+    // is what quests and the on-board labels count. A single tile can contribute
+    // several sub-sections to the same group.
+    public int GetSectionCount()
+    {
+        return sections.Count;
+    }
+
+    // The number of distinct tiles the group spans (used for placement scoring).
+    public int GetTileCount()
     {
         return tiles.Count;
     }

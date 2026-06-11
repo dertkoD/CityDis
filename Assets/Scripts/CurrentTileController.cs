@@ -71,6 +71,21 @@ public class CurrentTileController : MonoBehaviour
         DeckChanged?.Invoke();
     }
 
+    // Adds tiles to the deck (e.g. a quest reward). No effect on an infinite deck.
+    public void AddTiles(int count)
+    {
+        if (count <= 0 || infiniteDeck)
+        {
+            return;
+        }
+
+        reserve += count;
+
+        FillUpcoming();
+
+        DeckChanged?.Invoke();
+    }
+
     // Consumes the current tile and moves to the next one in the deck.
     public void AdvanceToNextTile()
     {

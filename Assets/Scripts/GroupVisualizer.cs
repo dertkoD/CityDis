@@ -91,7 +91,7 @@ public class GroupVisualizer : MonoBehaviour
         {
             foreach (TileGroup group in groups)
             {
-                int size = group.GetSize();
+                int size = group.GetSectionCount();
 
                 if (size < minGroupSizeToShow)
                 {

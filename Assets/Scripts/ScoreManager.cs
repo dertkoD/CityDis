@@ -143,7 +143,7 @@ public class ScoreManager : MonoBehaviour
 
             if (awardedClosedGroups.Add(signature))
             {
-                bonus += closedGroupBonusPerTile * group.GetSize();
+                bonus += closedGroupBonusPerTile * group.GetTileCount();
             }
         }
 
