@@ -9,6 +9,9 @@ public class TilePlacementController : MonoBehaviour
     [SerializeField] private CurrentTileController currentTileController;
     [SerializeField] private TilePlacementValidator tilePlacementValidator;
 
+    [Tooltip("Optional. If assigned, terrain groups are recomputed after each placement.")]
+    [SerializeField] private GroupTracker groupTracker;
+
     [Tooltip("Optional. If assigned, placements are scored.")]
     [SerializeField] private ScoreManager scoreManager;
 
@@ -36,6 +39,8 @@ public class TilePlacementController : MonoBehaviour
             scoreManager.ResetScore();
         }
 
+        currentTileController.ResetDeck();
+
         HexCoord startCoord = new HexCoord(0, 0);
 
         TileData startTileData = currentTileController.GenerateRandomTileData();
@@ -48,6 +53,11 @@ public class TilePlacementController : MonoBehaviour
             0
         );
 
+        if (groupTracker != null)
+        {
+            groupTracker.Recompute();
+        }
+
         if (scoreManager != null)
         {
             scoreManager.OnTilePlaced(startCoord);
@@ -55,13 +65,16 @@ public class TilePlacementController : MonoBehaviour
 
         availableCellManager.UpdateAfterTilePlaced(startCoord, boardGrid);
 
-        currentTileController.GenerateNextTile();
-
         RefreshAvailableMarkers();
     }
 
     public bool CanPlaceCurrentTileAt(HexCoord coord)
     {
+        if (!currentTileController.HasCurrentTile)
+        {
+            return false;
+        }
+
         if (!availableCellManager.IsAvailable(coord))
         {
             return false;
@@ -106,6 +119,11 @@ public class TilePlacementController : MonoBehaviour
             rotationSteps
         );
 
+        if (groupTracker != null)
+        {
+            groupTracker.Recompute();
+        }
+
         if (scoreManager != null)
         {
             scoreManager.OnTilePlaced(coord);
@@ -113,7 +131,7 @@ public class TilePlacementController : MonoBehaviour
 
         availableCellManager.UpdateAfterTilePlaced(coord, boardGrid);
 
-        currentTileController.GenerateNextTile();
+        currentTileController.AdvanceToNextTile();
 
         RefreshAvailableMarkers();
     }

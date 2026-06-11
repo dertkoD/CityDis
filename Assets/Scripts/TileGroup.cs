@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 // Identifies one edge ("section") of a placed tile: the tile coordinate plus
 // the world-facing side index (0..5).
@@ -38,6 +39,10 @@ public class TileGroup
     public string Id { get; }
     public TerrainType TerrainType { get; }
 
+    // The scoring family this group belongs to (e.g. river + water bodies share
+    // the Water family).
+    public TerrainGroupFamily Family => TerrainCatalog.GroupFamily(TerrainType);
+
     private readonly HashSet<EdgeKey> sections = new();
     private readonly HashSet<HexCoord> tiles = new();
 
@@ -70,12 +75,41 @@ public class TileGroup
         OpenEnds += other.OpenEnds;
     }
 
-    public int GetSize()
+    // The group size in SUB-SECTIONS (the per-edge sub-parts of the hexes), which
+    // is what quests and the on-board labels count. A single tile can contribute
+    // several sub-sections to the same group.
+    public int GetSectionCount()
+    {
+        return sections.Count;
+    }
+
+    // The number of distinct tiles the group spans (used for placement scoring).
+    public int GetTileCount()
     {
         return tiles.Count;
     }
 
     public bool IsClosed => OpenEnds == 0 && sections.Count > 0;
+
+    // Average board-layout position of the tiles in this group, used to anchor a
+    // group-size label. Uses the same HexToWorld layout that places the tiles, so
+    // the result is in the board parent's LOCAL space (y = 0 on the board plane).
+    public Vector3 GetLayoutCentroid(float hexSize, HexOrientation orientation)
+    {
+        if (tiles.Count == 0)
+        {
+            return Vector3.zero;
+        }
+
+        Vector3 sum = Vector3.zero;
+
+        foreach (HexCoord tile in tiles)
+        {
+            sum += HexGridMath.HexToWorld(tile, hexSize, orientation);
+        }
+
+        return sum / tiles.Count;
+    }
 
     // Stable signature used to award a closed group's bonus only once.
     public string GetSignature()

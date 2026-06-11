@@ -36,6 +36,17 @@ public class PlacedTile : MonoBehaviour
         return tileDefinition.GetLocalSide(localSide);
     }
 
+    // The tile center is rotation-invariant, so it does not depend on rotationSteps.
+    public TerrainType GetCenterTerrain()
+    {
+        if (tileDefinition == null)
+        {
+            return TerrainType.Empty;
+        }
+
+        return tileDefinition.GetCenter();
+    }
+
     private int NormalizeRotationSteps(int steps)
     {
         return Mod(steps, 6);
