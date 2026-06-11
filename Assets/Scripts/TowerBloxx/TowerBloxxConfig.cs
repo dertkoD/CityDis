@@ -8,35 +8,50 @@ public class TowerBloxxConfig : ScriptableObject
     public Vector2 blockSize = new Vector2(2f, 1f);
     public int blocksToBuild = 5;
 
-    [Header("Crane Movement")]
-    public float horizontalAmplitude = 3f;
-    public float horizontalSpeed = 1.5f;
+    [Header("Crane Ellipse Movement")]
+    public float craneCenterX = 0f;
+    public float craneEllipseRadiusX = 2.8f;
+    public float craneEllipseRadiusY = 0.45f;
+    public float craneEllipseSpeed = 1.5f;
+    public float blockDistanceBelowHook = 0.8f;
 
     [Header("Crane Height")]
     public CraneHeightMode heightMode = CraneHeightMode.Alternating;
     public float highCraneY = 4.5f;
     public float lowCraneY = 3.4f;
 
-    [Header("Drop")]
-    public float blockSpawnYOffsetFromTop = 2f;
-    public float settleVelocityThreshold = 0.08f;
-    public float settleAngularVelocityThreshold = 5f;
-    public float settleRequiredTime = 0.35f;
-    public float maxSettleWaitTime = 3f;
+    [Header("Drop Momentum")]
+    public bool useCraneDropMomentum = true;
+    public float dropMomentumMultiplier = 0.25f;
+    public float maxDropXVelocity = 1.2f;
 
-    [Header("Placement")]
-    public float perfectOffset = 0.08f;
-    public float snapOffset = 0.25f;
-    public float acceptableOffset = 0.9f;
+    [Header("Placement Accuracy")]
+    public float perfectOffset = 0.1f;
+    public float goodOffset = 0.35f;
+    public float acceptableOffset = 0.8f;
+
+    [Header("Handicap Snap")]
+    public float snapOffset = 0.15f;
 
     [Header("Score")]
     public int perfectScore = 100;
     public int goodScore = 60;
     public int acceptableScore = 25;
+    public int missPenalty = 30;
 
     [Header("Camera")]
     public float cameraMoveUpAmount = 1f;
     public float cameraMoveDuration = 0.35f;
+
+    [Header("Air Upright")]
+    public bool keepBlockUprightWhileFalling = true;
+    public float uprightTorqueStrength = 8f;
+    public float uprightDamping = 1.8f;
+
+    [Header("Held Block Tilt")]
+    public float heldBlockTiltMaxAngle = 12f;
+    public float heldBlockTiltSmoothSpeed = 8f;
+    public bool invertHeldBlockTilt = false;
 }
 
 public enum CraneHeightMode

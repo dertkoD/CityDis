@@ -10,10 +10,7 @@ public class TowerStack : MonoBehaviour
     {
         get
         {
-            if (_topBlock != null)
-            {
-                return _topBlock.TopY;
-            }
+            if (_topBlock) return _topBlock.TopY;
 
             return startingTopPoint.position.y;
         }
@@ -23,20 +20,9 @@ public class TowerStack : MonoBehaviour
     {
         get
         {
-            if (_topBlock != null)
-            {
-                return _topBlock.transform.position.x;
-            }
+            if (_topBlock) return _topBlock.transform.position.x;
 
             return startingTopPoint.position.x;
-        }
-    }
-
-    public Vector3 SpawnReferencePosition
-    {
-        get
-        {
-            return new Vector3(TopX, TopY, 0f);
         }
     }
 

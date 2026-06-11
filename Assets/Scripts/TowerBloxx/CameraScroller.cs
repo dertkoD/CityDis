@@ -13,10 +13,9 @@ public class CameraScroller : MonoBehaviour
 
     public void MoveToTowerTop(float towerTopY)
     {
-        if (_moveRoutine != null)
-        {
-            StopCoroutine(_moveRoutine);
-        }
+        if (!targetCamera|| !config) return;
+
+        if (_moveRoutine != null) StopCoroutine(_moveRoutine);
 
         Vector3 targetPosition = targetCamera.transform.position;
         targetPosition.y = towerTopY + topBlockScreenOffset;
@@ -42,5 +41,6 @@ public class CameraScroller : MonoBehaviour
         }
 
         targetCamera.transform.position = targetPosition;
+        _moveRoutine = null;
     }
 }

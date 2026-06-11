@@ -15,6 +15,12 @@ public class ScoreCounter : MonoBehaviour
         ScoreChanged?.Invoke(_score);
     }
 
+    public void RemoveScore(int amount)
+    {
+        _score = Mathf.Max(0, _score - amount);
+        ScoreChanged?.Invoke(_score);
+    }
+
     public void ResetScore()
     {
         _score = 0;

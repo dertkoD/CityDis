@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using UnityEngine;
 
@@ -18,27 +19,31 @@ public class TowerBloxxGameController : MonoBehaviour
     private bool _canDrop;
     private bool _isResolvingDrop;
 
+    public event Action<int> BlocksLeftChanged;
+    public event Action<string> DropFeedbackChanged;
+    public event Action HouseCompleted;
+
+    public int BlocksLeft => config.blocksToBuild - _placedBlocks;
+
     private void OnEnable()
     {
-        crane.BlockDropped += HandleBlockDropped;
+        if (crane) crane.BlockDropped += HandleBlockDropped;
     }
 
     private void OnDisable()
     {
-        crane.BlockDropped -= HandleBlockDropped;
+        if (crane) crane.BlockDropped -= HandleBlockDropped;
     }
 
     private void Start()
     {
+        BlocksLeftChanged?.Invoke(BlocksLeft);
         StartNextTurn();
     }
 
     private void Update()
     {
-        if (!_canDrop || _isResolvingDrop)
-        {
-            return;
-        }
+        if (!_canDrop || _isResolvingDrop) return;
 
         if (Input.GetMouseButtonDown(0) || Input.GetKeyDown(KeyCode.Space))
         {
@@ -51,48 +56,81 @@ public class TowerBloxxGameController : MonoBehaviour
     {
         if (_placedBlocks >= config.blocksToBuild)
         {
-            Debug.Log("House completed!");
+            CompleteHouse();
             return;
         }
 
-        crane.SpawnBlock(towerStack.SpawnReferencePosition);
+        crane.SpawnBlock();
         _canDrop = true;
     }
 
     private void HandleBlockDropped(TowerBlock block)
     {
-        StartCoroutine(ResolveDroppedBlockRoutine(block));
+        _isResolvingDrop = true;
+        block.Landed += HandleBlockLanded;
     }
 
-    private IEnumerator ResolveDroppedBlockRoutine(TowerBlock block)
+    private void HandleBlockLanded(TowerBlock block)
     {
-        _isResolvingDrop = true;
+        block.Landed -= HandleBlockLanded;
+        StartCoroutine(ResolveDroppedBlockAfterShortDelay(block));
+    }
 
-        yield return WaitForBlockToSettle(block);
+    private IEnumerator ResolveDroppedBlockAfterShortDelay(TowerBlock block)
+    {
+        yield return new WaitForSeconds(0.06f);
 
         PlacementResult result = placementEvaluator.Evaluate(
             block,
             towerStack.TopY,
             towerStack.TopX
         );
-        
+
         if (!result.IsSuccess)
         {
-            Debug.Log($"Failed drop. Offset: {result.Offset}");
-            cameraShake.Shake(0.2f, 0.15f);
-            _isResolvingDrop = false;
+            HandleFailedDrop(block, result);
+
             yield break;
         }
 
-        towerStack.RegisterSuccessfulBlock(block);
-        scoreCounter.AddScore(result.Score);
-        _placedBlocks++;
+        yield return HandleSuccessfulDrop(block, result);
+    }
 
-        Debug.Log($"Success. Score: {result.Score}, Offset: {result.Offset}, Snapped: {result.WasSnapped}");
+    private void HandleFailedDrop(TowerBlock block, PlacementResult result)
+    {
+        Debug.Log($"Failed drop. Offset: {result.Offset}. Penalty: {config.missPenalty}");
+
+        scoreCounter.RemoveScore(config.missPenalty);
+        DropFeedbackChanged?.Invoke($"Miss -{config.missPenalty}");
+
+        cameraShake.Shake(0.2f, 0.15f);
+
+        StartCoroutine(ReturnFailedBlockRoutine(block));
+    }
+
+    private IEnumerator ReturnFailedBlockRoutine(TowerBlock block)
+    {
+        yield return new WaitForSeconds(0.35f);
+
+        crane.ReattachBlock(block);
+
+        _isResolvingDrop = false;
+        _canDrop = true;
+    }
+
+    private IEnumerator HandleSuccessfulDrop(TowerBlock block, PlacementResult result)
+    {
+        towerStack.RegisterSuccessfulBlock(block);
+
+        scoreCounter.AddScore(result.Score);
+        DropFeedbackChanged?.Invoke(GetDropFeedbackText(result));
+
+        _placedBlocks++;
+        BlocksLeftChanged?.Invoke(BlocksLeft);
 
         cameraShake.Shake();
 
-        yield return new WaitForSeconds(0.15f);
+        yield return new WaitForSeconds(0.08f);
 
         cameraScroller.MoveToTowerTop(towerStack.TopY);
 
@@ -103,30 +141,31 @@ public class TowerBloxxGameController : MonoBehaviour
         StartNextTurn();
     }
 
-    private IEnumerator WaitForBlockToSettle(TowerBlock block)
+    private void CompleteHouse()
     {
-        float totalTimer = 0f;
-        float settledTimer = 0f;
+        Debug.Log("House completed!");
 
-        while (totalTimer < config.maxSettleWaitTime)
+        DropFeedbackChanged?.Invoke(string.Empty);
+        HouseCompleted?.Invoke();
+    }
+
+    private string GetDropFeedbackText(PlacementResult result)
+    {
+        if (result.IsPerfect)
         {
-            totalTimer += Time.deltaTime;
-
-            if (block.IsSettled(config.settleVelocityThreshold, config.settleAngularVelocityThreshold))
-            {
-                settledTimer += Time.deltaTime;
-
-                if (settledTimer >= config.settleRequiredTime)
-                {
-                    yield break;
-                }
-            }
-            else
-            {
-                settledTimer = 0f;
-            }
-
-            yield return null;
+            return $"Perfect +{result.Score}";
         }
+
+        if (result.Score == config.goodScore)
+        {
+            return $"Good +{result.Score}";
+        }
+
+        if (result.Score == config.acceptableScore)
+        {
+            return $"Ok +{result.Score}";
+        }
+
+        return $"+{result.Score}";
     }
 }

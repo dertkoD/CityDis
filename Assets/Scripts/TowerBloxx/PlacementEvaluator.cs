@@ -7,29 +7,55 @@ public class PlacementEvaluator : MonoBehaviour
     public PlacementResult Evaluate(TowerBlock droppedBlock, float targetTopY, float targetX)
     {
         float offset = Mathf.Abs(droppedBlock.transform.position.x - targetX);
+        bool shouldSnap = offset <= config.snapOffset;
 
         if (offset <= config.perfectOffset)
         {
-            PlaceBlock(droppedBlock, targetTopY, targetX, true);
-            return new PlacementResult(true, true, true, config.perfectScore, offset);
+            PlaceBlock(droppedBlock, targetTopY, targetX);
+
+            return new PlacementResult(
+                true,
+                true,
+                true,
+                config.perfectScore,
+                offset
+            );
         }
 
-        if (offset <= config.snapOffset)
+        if (offset <= config.goodOffset)
         {
-            PlaceBlock(droppedBlock, targetTopY, targetX, true);
-            return new PlacementResult(true, true, false, config.goodScore, offset);
+            float finalX = shouldSnap ? targetX : droppedBlock.transform.position.x;
+
+            PlaceBlock(droppedBlock, targetTopY, finalX);
+
+            return new PlacementResult(
+                true,
+                shouldSnap,
+                false,
+                config.goodScore,
+                offset
+            );
         }
 
         if (offset <= config.acceptableOffset)
         {
-            PlaceBlock(droppedBlock, targetTopY, droppedBlock.transform.position.x, false);
-            return new PlacementResult(true, false, false, config.acceptableScore, offset);
+            float finalX = shouldSnap ? targetX : droppedBlock.transform.position.x;
+
+            PlaceBlock(droppedBlock, targetTopY, finalX);
+
+            return new PlacementResult(
+                true,
+                shouldSnap,
+                false,
+                config.acceptableScore,
+                offset
+            );
         }
 
         return new PlacementResult(false, false, false, 0, offset);
     }
 
-    private void PlaceBlock(TowerBlock block, float targetTopY, float targetX, bool snapped)
+    private void PlaceBlock(TowerBlock block, float targetTopY, float targetX)
     {
         block.transform.rotation = Quaternion.identity;
 

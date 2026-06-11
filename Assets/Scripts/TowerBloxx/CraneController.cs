@@ -3,131 +3,182 @@ using UnityEngine;
 
 public class CraneController : MonoBehaviour
 {
+    [Header("Config")]
     [SerializeField] private TowerBloxxConfig config;
+
+    [Header("References")]
     [SerializeField] private Transform hookPoint;
     [SerializeField] private LineRenderer ropeRenderer;
 
     private TowerBlock _heldBlock;
-    private float _time;
+
+    private float _ellipseTime;
     private float _currentHeight;
+    private float _currentHeldBlockAngle;
+
     private int _spawnIndex;
-    private Vector3 _previousHookPosition;
+
+    private Vector2 _currentHookVelocity;
 
     public event Action<TowerBlock> BlockDropped;
 
     private void Awake()
     {
-        _currentHeight = config.highCraneY;
-        _previousHookPosition = hookPoint.position;
+        if (config) _currentHeight = config.highCraneY;
     }
 
     private void Update()
     {
-        MoveCrane();
+        MoveHookOnEllipse();
 
-        if (_heldBlock)
-        {
-            MoveHeldBlock();
-            DrawRope();
-        }
+        if (!_heldBlock) return;
+
+        MoveHeldBlockUnderHook();
+        DrawRope();
     }
 
-    public void SpawnBlock(Vector3 stackTopPosition)
+    public void SpawnBlock()
     {
+        if (!config || !hookPoint || !config.blockPrefab) return;
+
         _currentHeight = GetNextCraneHeight();
+        _currentHeldBlockAngle = 0f;
 
-        Vector3 spawnPosition = new Vector3(
-            stackTopPosition.x,
-            stackTopPosition.y + config.blockSpawnYOffsetFromTop + _currentHeight,
-            0f
-        );
+        MoveHookOnEllipse();
 
-        _heldBlock = Instantiate(config.blockPrefab, spawnPosition, Quaternion.identity);
+        Vector3 blockPosition = GetHeldBlockPosition();
+
+        _heldBlock = Instantiate(config.blockPrefab, blockPosition, Quaternion.identity);
         _heldBlock.SetHeldState();
 
-        _previousHookPosition = hookPoint.position;
-
-        if (ropeRenderer)
-        {
-            ropeRenderer.enabled = true;
-        }
+        SetRopeVisible(true);
     }
 
     public void DropHeldBlock()
     {
-        if (!_heldBlock)
-        {
-            return;
-        }
+        if (!_heldBlock) return;
 
         TowerBlock droppedBlock = _heldBlock;
         _heldBlock = null;
 
-        droppedBlock.SetDroppedState();
+        float inheritedXVelocity = GetDropXVelocity();
 
-        if (ropeRenderer)
-        {
-            ropeRenderer.enabled = false;
-        }
+        droppedBlock.transform.rotation = Quaternion.identity;
+        droppedBlock.SetDroppedState(inheritedXVelocity, config);
+
+        _currentHeldBlockAngle = 0f;
+
+        SetRopeVisible(false);
 
         BlockDropped?.Invoke(droppedBlock);
     }
 
-    private void MoveCrane()
+    public void ReattachBlock(TowerBlock block)
     {
-        _time += Time.deltaTime * config.horizontalSpeed;
+        if (!block || !hookPoint) return;
 
-        float x = Mathf.Sin(_time) * config.horizontalAmplitude;
+        _heldBlock = block;
 
-        Vector3 position = hookPoint.position;
-        position.x = x;
-        position.y = _currentHeight + Camera.main.transform.position.y;
-        hookPoint.position = position;
+        Vector3 blockPosition = GetHeldBlockPosition();
+
+        _heldBlock.ReturnToCrane(blockPosition, Quaternion.identity);
+
+        _currentHeldBlockAngle = 0f;
+
+        SetRopeVisible(true);
     }
 
-    private void MoveHeldBlock()
+    private void MoveHookOnEllipse()
     {
-        Vector3 hookPosition = hookPoint.position;
+        if (!config|| !hookPoint) return;
 
-        Vector3 blockPosition = hookPosition;
-        blockPosition.y -= config.blockSize.y * 0.8f;
+        Vector3 previousPosition = hookPoint.position;
 
-        _heldBlock.transform.position = blockPosition;
+        _ellipseTime += Time.deltaTime * config.craneEllipseSpeed;
 
-        float swingAngle = Mathf.Cos(_time) * 8f;
-        _heldBlock.transform.rotation = Quaternion.Euler(0f, 0f, swingAngle);
+        float x = config.craneCenterX + Mathf.Cos(_ellipseTime) * config.craneEllipseRadiusX;
+
+        float cameraY = Camera.main != null ? Camera.main.transform.position.y : 0f;
+        float baseY = cameraY + _currentHeight;
+        float y = baseY + Mathf.Sin(_ellipseTime) * config.craneEllipseRadiusY;
+
+        hookPoint.position = new Vector3(x, y, 0f);
+
+        if (Time.deltaTime > 0f) _currentHookVelocity = (hookPoint.position - previousPosition) / Time.deltaTime;
+    }
+
+    private void MoveHeldBlockUnderHook()
+    {
+        _heldBlock.transform.position = GetHeldBlockPosition();
+
+        float targetAngle = GetHeldBlockTiltAngle();
+
+        _currentHeldBlockAngle = Mathf.Lerp(
+            _currentHeldBlockAngle,
+            targetAngle,
+            Time.deltaTime * config.heldBlockTiltSmoothSpeed
+        );
+
+        _heldBlock.transform.rotation = Quaternion.Euler(0f, 0f, _currentHeldBlockAngle);
+    }
+
+    private Vector3 GetHeldBlockPosition()
+    {
+        Vector3 blockPosition = hookPoint.position;
+        blockPosition.y -= config.blockDistanceBelowHook;
+
+        return blockPosition;
+    }
+
+    private float GetHeldBlockTiltAngle()
+    {
+        float normalizedCraneX = 0f;
+
+        if (config.craneEllipseRadiusX > 0f) normalizedCraneX = (hookPoint.position.x - config.craneCenterX) / config.craneEllipseRadiusX;
+
+        normalizedCraneX = Mathf.Clamp(normalizedCraneX, -1f, 1f);
+
+        float angle = normalizedCraneX * config.heldBlockTiltMaxAngle;
+
+        if (config.invertHeldBlockTilt) angle *= -1f;
+
+        return angle;
     }
 
     private void DrawRope()
     {
-        if (!ropeRenderer || !_heldBlock)
-        {
-            return;
-        }
+        if (!ropeRenderer || !_heldBlock ) return;
 
         ropeRenderer.SetPosition(0, hookPoint.position);
-        ropeRenderer.SetPosition(1, _heldBlock.transform.position + Vector3.up * config.blockSize.y * 0.5f);
+        ropeRenderer.SetPosition(1, _heldBlock.RopeAttachPosition);
     }
 
-    private Vector2 CalculateHookVelocity()
+    private float GetDropXVelocity()
     {
-        Vector3 currentPosition = hookPoint.position;
-        Vector2 velocity = (currentPosition - _previousHookPosition) / Time.deltaTime;
-        _previousHookPosition = currentPosition;
+        if (!config.useCraneDropMomentum) return 0f;
 
-        return velocity;
+        float xVelocity = _currentHookVelocity.x * config.dropMomentumMultiplier;
+
+        return Mathf.Clamp(
+            xVelocity,
+            -config.maxDropXVelocity,
+            config.maxDropXVelocity
+        );
     }
 
     private float GetNextCraneHeight()
     {
-        if (config.heightMode == CraneHeightMode.Random)
-        {
+        if (config.heightMode == CraneHeightMode.Random) 
             return UnityEngine.Random.value > 0.5f ? config.highCraneY : config.lowCraneY;
-        }
 
         float height = _spawnIndex % 2 == 0 ? config.highCraneY : config.lowCraneY;
         _spawnIndex++;
 
         return height;
+    }
+
+    private void SetRopeVisible(bool isVisible)
+    {
+        if (ropeRenderer) ropeRenderer.enabled = isVisible;
     }
 }

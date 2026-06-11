@@ -16,10 +16,9 @@ public class CameraShake : MonoBehaviour
 
     public void Shake(float duration, float strength)
     {
-        if (_shakeRoutine != null)
-        {
-            StopCoroutine(_shakeRoutine);
-        }
+        if (!targetCamera) return;
+
+        if (_shakeRoutine != null) StopCoroutine(_shakeRoutine);
 
         _shakeRoutine = StartCoroutine(ShakeRoutine(duration, strength));
     }
@@ -40,5 +39,6 @@ public class CameraShake : MonoBehaviour
         }
 
         targetCamera.transform.position = originalPosition;
+        _shakeRoutine = null;
     }
 }
