@@ -157,7 +157,8 @@ public class TilePreviewPanel : MonoBehaviour
             return;
         }
 
-        bool show = data != null && questManager.TryGetRemainingFor(data, out int rem);
+        int rem = 0;
+        bool show = data != null && questManager.TryGetRemainingFor(data, out rem);
 
         if (!show)
         {
