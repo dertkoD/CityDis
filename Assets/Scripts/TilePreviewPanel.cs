@@ -59,8 +59,10 @@ public class TilePreviewPanel : MonoBehaviour
     [SerializeField] private QuestManager questManager;
     [Tooltip("Quest-mark prefab (with a QuestMark component).")]
     [SerializeField] private GameObject questMarkPrefab;
-    [Tooltip("Local offset of the mark relative to its slot.")]
+    [Tooltip("Local offset of the mark relative to slot 0 (the current tile).")]
     [SerializeField] private Vector3 questMarkOffset = new Vector3(0f, 0.1f, 0f);
+    [Tooltip("Local rotation (euler angles) of the preview quest mark.")]
+    [SerializeField] private Vector3 questMarkEuler = Vector3.zero;
     [SerializeField] private Vector3 questMarkScale = Vector3.one;
 
     private GameObject[] slotInstances;
@@ -157,8 +159,11 @@ public class TilePreviewPanel : MonoBehaviour
             return;
         }
 
+        // Only the current tile (slot 0) carries a quest mark in the preview.
         int rem = 0;
-        bool show = data != null && questManager.TryGetRemainingFor(data, out rem);
+        bool show = slotIndex == 0
+            && data != null
+            && questManager.TryGetRemainingFor(data, out rem);
 
         if (!show)
         {
@@ -178,6 +183,7 @@ public class TilePreviewPanel : MonoBehaviour
         }
 
         mark.transform.localPosition = questMarkOffset;
+        mark.transform.localRotation = Quaternion.Euler(questMarkEuler);
         mark.transform.localScale = questMarkScale;
         mark.SetRemaining(rem);
         mark.Show();
