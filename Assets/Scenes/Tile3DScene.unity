@@ -1359,6 +1359,7 @@ GameObject:
   - component: {fileID: 981011466}
   - component: {fileID: 981011468}
   - component: {fileID: 981011469}
+  - component: {fileID: 981011470}
   m_Layer: 0
   m_Name: GameBoard
   m_TagString: Untagged
@@ -1660,8 +1661,28 @@ MonoBehaviour:
   orientation: 1
   hexSize: 0.1
   heightOffset: 0.02
-  highlightScale: {x: 0.009786717, y: 0.00471085, z: 0.015625}
+  highlightScale: {x: 0.1, y: 0.05, z: 0.1}
   onlyGroupMatches: 1
+--- !u!114 &981011470
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 981011453}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c54375259c0e4980b98ea8491612ed89, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::BoardQuestMarkVisualizer
+  questManager: {fileID: 981011468}
+  boardGrid: {fileID: 981011457}
+  questMarkPrefab: {fileID: 5184568865032130632, guid: d4f875e24cb0cb34288aa1d00fa375f4, type: 3}
+  markParent: {fileID: 2009534736}
+  orientation: 1
+  hexSize: 0.1
+  heightOffset: 0.08
+  markScale: {x: 10, y: 10, z: 10}
 --- !u!1 &1127427944
 GameObject:
   m_ObjectHideFlags: 0
@@ -1787,6 +1808,10 @@ MonoBehaviour:
   maxStackBlocks: 64
   remainingLabel: {fileID: 156126982}
   infiniteText: "\u221E"
+  questManager: {fileID: 0}
+  questMarkPrefab: {fileID: 0}
+  questMarkOffset: {x: 0, y: 0.1, z: 0}
+  questMarkScale: {x: 1, y: 1, z: 1}
 --- !u!1 &1880575910
 GameObject:
   m_ObjectHideFlags: 0
