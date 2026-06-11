@@ -39,6 +39,22 @@ public class CurrentTileController : MonoBehaviour
     public TileData CurrentTileData => upcoming.Count > 0 ? upcoming.Peek() : null;
     public bool HasCurrentTile => upcoming.Count > 0;
 
+    // Terrain shown on a given WORLD side of the current tile, accounting for the
+    // current rotation. Uses the same mapping as PlacedTile.GetSideTerrain so the
+    // preview and the board agree.
+    public TerrainType GetCurrentWorldSideTerrain(int worldSide)
+    {
+        TileData data = CurrentTileData;
+
+        if (data == null)
+        {
+            return TerrainType.Empty;
+        }
+
+        int localSide = ((worldSide + rotationSteps) % 6 + 6) % 6;
+        return data.GetSide(localSide);
+    }
+
     public int RotationSteps => rotationSteps;
     public Quaternion CurrentRotation => Quaternion.Euler(0f, rotationSteps * 60f, 0f);
 

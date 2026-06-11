@@ -8,6 +8,8 @@ public class PlayerInputController : MonoBehaviour
     [SerializeField] private CurrentTileController currentTileController;
     [SerializeField] private TilePlacementController tilePlacementController;
     [SerializeField] private HoverTilePreviewController hoverTilePreviewController;
+    [Tooltip("Optional. Highlights matching tile sides under the hovered cell.")]
+    [SerializeField] private EdgeHighlightVisualizer edgeHighlightVisualizer;
 
     [Header("Input Actions")]
     [SerializeField] private InputActionReference clickAction;
@@ -61,6 +63,11 @@ public class PlayerInputController : MonoBehaviour
 
         hoveredMarker = null;
         hoverTilePreviewController.HidePreview();
+
+        if (edgeHighlightVisualizer != null)
+        {
+            edgeHighlightVisualizer.Hide();
+        }
     }
 
     private void OnRotateLeftPerformed(InputAction.CallbackContext context)
@@ -70,6 +77,8 @@ public class PlayerInputController : MonoBehaviour
         tilePlacementController.RefreshAvailableMarkers();
 
         hoverTilePreviewController.RefreshRotation();
+
+        RefreshEdgeHighlight();
     }
 
     private void OnRotateRightPerformed(InputAction.CallbackContext context)
@@ -79,6 +88,25 @@ public class PlayerInputController : MonoBehaviour
         tilePlacementController.RefreshAvailableMarkers();
 
         hoverTilePreviewController.RefreshRotation();
+
+        RefreshEdgeHighlight();
+    }
+
+    private void RefreshEdgeHighlight()
+    {
+        if (edgeHighlightVisualizer == null)
+        {
+            return;
+        }
+
+        if (hoveredMarker != null)
+        {
+            edgeHighlightVisualizer.ShowForCoord(hoveredMarker.Coord);
+        }
+        else
+        {
+            edgeHighlightVisualizer.Hide();
+        }
     }
 
     private void UpdateHover()
@@ -90,10 +118,21 @@ public class PlayerInputController : MonoBehaviour
         if (hoveredMarker == null)
         {
             hoverTilePreviewController.HidePreview();
+
+            if (edgeHighlightVisualizer != null)
+            {
+                edgeHighlightVisualizer.Hide();
+            }
+
             return;
         }
 
         hoverTilePreviewController.ShowPreviewAt(hoveredMarker.Coord);
+
+        if (edgeHighlightVisualizer != null)
+        {
+            edgeHighlightVisualizer.ShowForCoord(hoveredMarker.Coord);
+        }
     }
 
     private AvailableCellMarker RaycastAvailableMarker()
