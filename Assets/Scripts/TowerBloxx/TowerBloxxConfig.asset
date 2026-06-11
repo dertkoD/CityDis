@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d1e6981e87c88964fbd1c1f59e3115d8, type: 3}
+  m_Name: TowerBloxxConfig
+  m_EditorClassIdentifier: Assembly-CSharp::TowerBloxxConfig
+  blockPrefab: {fileID: 421227821652870442, guid: 6dec9c4bcc12f4a41b955fbbcfc7bd89, type: 3}
+  blockSize: {x: 2.25, y: 2.25}
+  blocksToBuild: 5
+  horizontalAmplitude: 3
+  horizontalSpeed: 1.5
+  heightMode: 0
+  highCraneY: 4.5
+  lowCraneY: 3.4
+  blockSpawnYOffsetFromTop: 2
+  settleVelocityThreshold: 0.08
+  settleAngularVelocityThreshold: 5
+  settleRequiredTime: 0.35
+  maxSettleWaitTime: 3
+  perfectOffset: 0.08
+  snapOffset: 0.25
+  acceptableOffset: 0.9
+  perfectScore: 100
+  goodScore: 60
+  acceptableScore: 25
+  cameraMoveUpAmount: 1
+  cameraMoveDuration: 0.35
