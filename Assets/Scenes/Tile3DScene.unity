@@ -1811,6 +1811,7 @@ MonoBehaviour:
   questManager: {fileID: 981011468}
   questMarkPrefab: {fileID: 5184568865032130632, guid: d4f875e24cb0cb34288aa1d00fa375f4, type: 3}
   questMarkOffset: {x: 0, y: 0.1, z: 0}
+  questMarkEuler: {x: 0, y: 45, z: 0}
   questMarkScale: {x: 10, y: 10, z: 10}
 --- !u!1 &1880575910
 GameObject:
