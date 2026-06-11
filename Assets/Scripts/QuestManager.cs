@@ -209,42 +209,6 @@ public class QuestManager : MonoBehaviour
         return found;
     }
 
-    public bool TryGetRemainingFor(PlacedTile tile, out int remaining)
-    {
-        remaining = 0;
-
-        if (tile == null)
-        {
-            return false;
-        }
-
-        bool found = false;
-        int best = int.MaxValue;
-
-        foreach (TerrainGroupQuest quest in active)
-        {
-            if (quest == null || !PlacedTileHasFamily(tile, quest.family))
-            {
-                continue;
-            }
-
-            int rem = Mathf.Max(0, quest.requiredCount - quest.currentProgress);
-
-            if (rem < best)
-            {
-                best = rem;
-                found = true;
-            }
-        }
-
-        if (found)
-        {
-            remaining = best;
-        }
-
-        return found;
-    }
-
     private static bool TileDataHasFamily(TileData data, TerrainGroupFamily family)
     {
         if (TerrainCatalog.GroupFamily(data.Center) == family)
@@ -255,24 +219,6 @@ public class QuestManager : MonoBehaviour
         for (int side = 0; side < 6; side++)
         {
             if (TerrainCatalog.GroupFamily(data.GetSide(side)) == family)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool PlacedTileHasFamily(PlacedTile tile, TerrainGroupFamily family)
-    {
-        if (TerrainCatalog.GroupFamily(tile.GetCenterTerrain()) == family)
-        {
-            return true;
-        }
-
-        for (int side = 0; side < 6; side++)
-        {
-            if (TerrainCatalog.GroupFamily(tile.GetSideTerrain(side)) == family)
             {
                 return true;
             }
