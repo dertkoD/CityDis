@@ -40,6 +40,8 @@ public class QuestManager : MonoBehaviour
 
     public IReadOnlyList<TerrainGroupQuest> Quests => active;
 
+    public bool HasActiveQuests => active.Count > 0;
+
     // Raised after progress is re-evaluated, so the quest HUD can refresh its text.
     public event Action QuestsChanged;
 
@@ -164,6 +166,119 @@ public class QuestManager : MonoBehaviour
         pool.RemoveAt(index);
 
         return quest;
+    }
+
+    // Quest-mark helpers: a tile "matches" an active quest when one of its
+    // sub-sections (center or any edge) belongs to that quest's family. The number
+    // shown on the mark is how many more sub-parts that quest still needs. When a
+    // tile matches several active quests, the one closest to completion wins.
+
+    public bool TryGetRemainingFor(TileData data, out int remaining)
+    {
+        remaining = 0;
+
+        if (data == null)
+        {
+            return false;
+        }
+
+        bool found = false;
+        int best = int.MaxValue;
+
+        foreach (TerrainGroupQuest quest in active)
+        {
+            if (quest == null || !TileDataHasFamily(data, quest.family))
+            {
+                continue;
+            }
+
+            int rem = Mathf.Max(0, quest.requiredCount - quest.currentProgress);
+
+            if (rem < best)
+            {
+                best = rem;
+                found = true;
+            }
+        }
+
+        if (found)
+        {
+            remaining = best;
+        }
+
+        return found;
+    }
+
+    public bool TryGetRemainingFor(PlacedTile tile, out int remaining)
+    {
+        remaining = 0;
+
+        if (tile == null)
+        {
+            return false;
+        }
+
+        bool found = false;
+        int best = int.MaxValue;
+
+        foreach (TerrainGroupQuest quest in active)
+        {
+            if (quest == null || !PlacedTileHasFamily(tile, quest.family))
+            {
+                continue;
+            }
+
+            int rem = Mathf.Max(0, quest.requiredCount - quest.currentProgress);
+
+            if (rem < best)
+            {
+                best = rem;
+                found = true;
+            }
+        }
+
+        if (found)
+        {
+            remaining = best;
+        }
+
+        return found;
+    }
+
+    private static bool TileDataHasFamily(TileData data, TerrainGroupFamily family)
+    {
+        if (TerrainCatalog.GroupFamily(data.Center) == family)
+        {
+            return true;
+        }
+
+        for (int side = 0; side < 6; side++)
+        {
+            if (TerrainCatalog.GroupFamily(data.GetSide(side)) == family)
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool PlacedTileHasFamily(PlacedTile tile, TerrainGroupFamily family)
+    {
+        if (TerrainCatalog.GroupFamily(tile.GetCenterTerrain()) == family)
+        {
+            return true;
+        }
+
+        for (int side = 0; side < 6; side++)
+        {
+            if (TerrainCatalog.GroupFamily(tile.GetSideTerrain(side)) == family)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private int MaxSectionCount(IReadOnlyList<TileGroup> groups, TerrainGroupFamily family)

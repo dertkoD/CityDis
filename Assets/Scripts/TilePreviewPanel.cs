@@ -54,7 +54,17 @@ public class TilePreviewPanel : MonoBehaviour
     [Tooltip("Text shown for the counter when the deck is infinite.")]
     [SerializeField] private string infiniteText = "\u221E";
 
+    [Header("Quest marks (optional)")]
+    [Tooltip("Optional. When set, shows a quest mark on preview tiles that match an active quest.")]
+    [SerializeField] private QuestManager questManager;
+    [Tooltip("Quest-mark prefab (with a QuestMark component).")]
+    [SerializeField] private GameObject questMarkPrefab;
+    [Tooltip("Local offset of the mark relative to its slot.")]
+    [SerializeField] private Vector3 questMarkOffset = new Vector3(0f, 0.1f, 0f);
+    [SerializeField] private Vector3 questMarkScale = Vector3.one;
+
     private GameObject[] slotInstances;
+    private QuestMark[] slotMarks;
     private readonly List<GameObject> stackBlocks = new List<GameObject>();
 
     private void OnEnable()
@@ -63,8 +73,14 @@ public class TilePreviewPanel : MonoBehaviour
         {
             tileController.DeckChanged += Refresh;
             tileController.RotationChanged += UpdateCurrentRotation;
-            Refresh();
         }
+
+        if (questManager != null)
+        {
+            questManager.QuestsChanged += Refresh;
+        }
+
+        Refresh();
     }
 
     private void OnDisable()
@@ -73,6 +89,11 @@ public class TilePreviewPanel : MonoBehaviour
         {
             tileController.DeckChanged -= Refresh;
             tileController.RotationChanged -= UpdateCurrentRotation;
+        }
+
+        if (questManager != null)
+        {
+            questManager.QuestsChanged -= Refresh;
         }
     }
 
@@ -103,7 +124,9 @@ public class TilePreviewPanel : MonoBehaviour
                 continue;
             }
 
-            if (i < upcoming.Count && upcoming[i] != null)
+            bool filled = i < upcoming.Count && upcoming[i] != null;
+
+            if (filled)
             {
                 TileObjectSetup.ApplyData(instance, upcoming[i]);
 
@@ -122,7 +145,71 @@ public class TilePreviewPanel : MonoBehaviour
             {
                 instance.SetActive(false);
             }
+
+            RefreshSlotMark(i, filled ? upcoming[i] : null);
         }
+    }
+
+    private void RefreshSlotMark(int slotIndex, TileData data)
+    {
+        if (questManager == null || questMarkPrefab == null || slots[slotIndex] == null)
+        {
+            return;
+        }
+
+        bool show = data != null && questManager.TryGetRemainingFor(data, out int rem);
+
+        if (!show)
+        {
+            if (slotMarks != null && slotMarks[slotIndex] != null)
+            {
+                slotMarks[slotIndex].Hide();
+            }
+
+            return;
+        }
+
+        QuestMark mark = GetOrCreateSlotMark(slotIndex);
+
+        if (mark == null)
+        {
+            return;
+        }
+
+        mark.transform.localPosition = questMarkOffset;
+        mark.transform.localScale = questMarkScale;
+        mark.SetRemaining(rem);
+        mark.Show();
+    }
+
+    private QuestMark GetOrCreateSlotMark(int slotIndex)
+    {
+        if (slotMarks == null || slotMarks.Length != slots.Length)
+        {
+            slotMarks = new QuestMark[slots.Length];
+        }
+
+        if (slotMarks[slotIndex] != null)
+        {
+            return slotMarks[slotIndex];
+        }
+
+        GameObject instance = Instantiate(questMarkPrefab, slots[slotIndex]);
+        instance.name = $"Preview Quest Mark {slotIndex}";
+
+        QuestMark mark = instance.GetComponent<QuestMark>();
+
+        if (mark == null)
+        {
+            Debug.LogError(
+                $"'{questMarkPrefab.name}' is missing a QuestMark component. " +
+                "Add it to the quest-mark prefab.");
+            Destroy(instance);
+            return null;
+        }
+
+        slotMarks[slotIndex] = mark;
+        return mark;
     }
 
     private void UpdateCurrentRotation()
