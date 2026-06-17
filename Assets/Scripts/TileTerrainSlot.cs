@@ -6,12 +6,6 @@ public class TileTerrainSlot : MonoBehaviour
     [SerializeField] private HexSide side;
     [SerializeField] private Renderer targetRenderer;
 
-    // The slot anchors sit at the centre / edge midpoints of the tile, so they are
-    // the authored ground truth for where tiles meet. The layout calibration reads
-    // them to derive the exact hex size (see HexGridMath.TryMeasureHexSize).
-    public bool IsCenter => isCenter;
-    public HexSide Side => side;
-
     public void Apply(TileData tileData, TerrainMaterialDatabase materialDatabase)
     {
         if (tileData == null)

@@ -41,11 +41,13 @@ public class HoverTilePreviewController : MonoBehaviour
             coord,
             HexGridLayout.ResolveSize(hexSize),
             HexGridLayout.ResolveOrientation(orientation));
-        position.y += previewHeight;
 
-        previewInstance.transform.localPosition = position;
         previewInstance.transform.localRotation = currentTileController.CurrentRotation;
         previewInstance.SetActive(true);
+
+        // Match the placement logic: centre the rendered mesh on the cell (with the
+        // preview floating slightly above the board).
+        HexGridMath.AlignTileVisualToCell(previewInstance, position, previewHeight);
     }
 
     public void RefreshRotation()

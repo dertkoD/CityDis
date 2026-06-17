@@ -241,10 +241,13 @@ public class TilePlacementController : MonoBehaviour
         Vector3 position = HexGridMath.HexToWorld(coord, hexSize, orientation);
 
         GameObject tileObject = Instantiate(tilePrefab, tileParent);
-        tileObject.transform.localPosition = position;
         tileObject.transform.localRotation = rotation;
 
         TileObjectSetup.ApplyData(tileObject, tileData);
+
+        // Centre the rendered mesh on the cell (the mesh pivot is not at its
+        // geometric centre, so this must happen after the rotation is applied).
+        HexGridMath.AlignTileVisualToCell(tileObject, position);
 
         PlacedTile placedTile = tileObject.GetComponent<PlacedTile>();
 
