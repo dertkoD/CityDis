@@ -1648,7 +1648,8 @@ MonoBehaviour:
   scoreManager: {fileID: 981011465}
   startTilePrefab: {fileID: 2210071450516010687, guid: 9d234bfaa2865284e98741f8477f3c8a, type: 3}
   orientation: 1
-  hexSize: 0.1
+  autoCalibrateHexSize: 0
+  hexSize: 0.099
   tileParent: {fileID: 2009534736}
 --- !u!114 &981011455
 MonoBehaviour:
