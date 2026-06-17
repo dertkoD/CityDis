@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class TilePlacementController : MonoBehaviour
 {
+    // Frame on which the most recent tile was placed. Used by other systems
+    // (e.g. EmptyTerrainSceneLoader) to ignore the click that placed a tile so
+    // it does not also trigger an unrelated action on the same click.
+    public static int LastPlacementFrame { get; private set; } = -1;
+
     [Header("References")]
     [SerializeField] private BoardGrid boardGrid;
     [SerializeField] private AvailableCellManager availableCellManager;
@@ -186,5 +191,7 @@ public class TilePlacementController : MonoBehaviour
         placedTile.Initialize(coord, rotationSteps);
 
         boardGrid.AddTile(coord, placedTile);
+
+        LastPlacementFrame = Time.frameCount;
     }
 }

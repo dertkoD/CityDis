@@ -2,6 +2,12 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+// Lives in the 3D map scene. Opens the 2D Tower Bloxx scene ONLY when the player
+// clicks directly on the Empty center of an already placed tile.
+//
+// It deliberately does NOT react to:
+//   - clicks that place a tile (placing an Empty tile must not open the builder),
+//   - clicks on empty ground near (but not on) an Empty tile.
 public class EmptyTerrainSceneLoader : MonoBehaviour
 {
     [Header("References")]
@@ -14,7 +20,6 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     [Header("Raycast")]
     [SerializeField] private float rayDistance = 100f;
-    [SerializeField] private float mapPlaneY = 0f;
 
     [Header("Scene")]
     [SerializeField] private string towerBloxxSceneName = "TowerBloxxScene";
@@ -23,6 +28,8 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs;
+
+    private bool clickRequested;
 
     private void Awake()
     {
@@ -36,14 +43,11 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     private void OnEnable()
     {
-        if (clickAction == null)
+        if (clickAction != null)
         {
-            Log("Click Action is not assigned. Mouse fallback can still handle clicks.");
-            return;
+            clickAction.action.performed += OnClickPerformed;
+            clickAction.action.Enable();
         }
-
-        clickAction.action.performed += OnClickPerformed;
-        clickAction.action.Enable();
 
         if (pointerPositionAction != null)
         {
@@ -67,51 +71,60 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     private void OnClickPerformed(InputAction.CallbackContext context)
     {
-        TryOpenTowerBloxxScene("InputAction");
+        clickRequested = true;
     }
 
     private void Update()
     {
-        if (!useMouseButtonFallback || Mouse.current == null)
+        if (useMouseButtonFallback &&
+            Mouse.current != null &&
+            Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            clickRequested = true;
+        }
+    }
+
+    // Processed in LateUpdate so it runs AFTER tile placement has been handled
+    // this frame (placement happens in input callbacks / Update). This is what
+    // lets us reliably ignore the click that placed a tile.
+    private void LateUpdate()
+    {
+        if (!clickRequested)
         {
             return;
         }
 
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            TryOpenTowerBloxxScene("Mouse.current.leftButton");
-        }
+        clickRequested = false;
+        TryOpenTowerBloxxScene();
     }
 
-    private void TryOpenTowerBloxxScene(string source)
+    private void TryOpenTowerBloxxScene()
     {
-        Log($"Click received from {source}.");
-
         if (CityBuildSession.HasPendingTile)
         {
-            Log("Ignored click because a city build session is already pending.");
+            return;
+        }
+
+        if (TilePlacementController.LastPlacementFrame == Time.frameCount)
+        {
+            Log("Ignored click because a tile was placed this frame.");
             return;
         }
 
         if (mainCamera == null)
         {
-            Debug.LogError("Main Camera is not assigned on EmptyTerrainSceneLoader.");
+            Debug.LogError("EmptyTerrainSceneLoader: Main Camera is not assigned.", this);
             return;
         }
 
-        PlacedTile placedTile = GetClickedEmptyTile(out Vector3 hitPoint);
-
-        if (placedTile == null)
+        if (!TryGetClickedEmptyTile(out PlacedTile placedTile))
         {
-            Log("No Empty center click area was hit.");
             return;
         }
 
-        TerrainType centerTerrain = placedTile.GetCenterTerrain();
-
-        if (centerTerrain != TerrainType.Empty)
+        if (placedTile.GetCenterTerrain() != TerrainType.Empty)
         {
-            Log($"Hit tile {placedTile.name}, but center terrain is {centerTerrain}, not Empty.");
+            Log($"Hit tile {placedTile.name}, but its center terrain is not Empty.");
             return;
         }
 
@@ -132,9 +145,10 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         }
     }
 
-    private PlacedTile GetClickedEmptyTile(out Vector3 hitPoint)
+    // Strict: the click must land directly on the enabled Empty-center collider.
+    private bool TryGetClickedEmptyTile(out PlacedTile placedTile)
     {
-        hitPoint = Vector3.zero;
+        placedTile = null;
 
         Vector2 pointerPosition = ReadPointerPosition();
         Ray ray = mainCamera.ScreenPointToRay(pointerPosition);
@@ -144,92 +158,14 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         if (EmptyTerrainClickArea.TryRaycastEmptyArea(
                 ray,
                 rayDistance,
-                out EmptyTerrainClickArea raycastArea,
-                out hitPoint))
+                out EmptyTerrainClickArea emptyTerrainClickArea,
+                out _) &&
+            emptyTerrainClickArea.TryGetPlacedTile(out placedTile))
         {
-            if (!raycastArea.TryGetPlacedTile(out PlacedTile raycastTile))
-            {
-                Log("Direct Empty-area raycast hit an area, but it has no PlacedTile.");
-                return null;
-            }
-
-            Log($"Direct Empty-area raycast hit {raycastTile.name} at {hitPoint}.");
-            return raycastTile;
+            return true;
         }
 
-        if (TryGetEmptyTileFromMapPlane(ray, out PlacedTile planeTile, out hitPoint))
-        {
-            return planeTile;
-        }
-
-        RaycastHit[] hits = Physics.RaycastAll(
-            ray,
-            rayDistance,
-            ~0,
-            QueryTriggerInteraction.Collide
-        );
-
-        if (hits.Length == 0)
-        {
-            Log("Physics raycast returned 0 hits after map-plane check.");
-            return null;
-        }
-
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        Log($"Physics raycast returned {hits.Length} hit(s). First hit: {hits[0].collider.name}");
-
-        foreach (RaycastHit hit in hits)
-        {
-            EmptyTerrainClickArea emptyTerrainClickArea =
-                hit.collider.GetComponentInParent<EmptyTerrainClickArea>();
-
-            if (emptyTerrainClickArea != null &&
-                emptyTerrainClickArea.TryGetPlacedTile(out PlacedTile placedTile))
-            {
-                hitPoint = hit.point;
-                return placedTile;
-            }
-
-            if (emptyTerrainClickArea != null)
-            {
-                Log($"Hit EmptyTerrainClickArea on {hit.collider.name}, but no PlacedTile was found in parents.");
-            }
-        }
-
-        return null;
-    }
-
-    private bool TryGetEmptyTileFromMapPlane(Ray ray, out PlacedTile placedTile, out Vector3 hitPoint)
-    {
-        placedTile = null;
-        hitPoint = Vector3.zero;
-
-        Plane mapPlane = new Plane(Vector3.up, new Vector3(0f, mapPlaneY, 0f));
-
-        if (!mapPlane.Raycast(ray, out float enter))
-        {
-            Log("Mouse ray did not intersect map plane.");
-            return false;
-        }
-
-        hitPoint = ray.GetPoint(enter);
-
-        if (!EmptyTerrainClickArea.TryGetEmptyAreaAtWorldPoint(
-                hitPoint,
-                out EmptyTerrainClickArea emptyTerrainClickArea))
-        {
-            Log($"Map-plane point {hitPoint} is outside all active Empty click areas.");
-            return false;
-        }
-
-        if (!emptyTerrainClickArea.TryGetPlacedTile(out placedTile))
-        {
-            Log("Map-plane hit EmptyTerrainClickArea, but it has no PlacedTile.");
-            return false;
-        }
-
-        Log($"Map-plane hit Empty click area on {placedTile.name} at {hitPoint}.");
-        return true;
+        return false;
     }
 
     private Vector2 ReadPointerPosition()
@@ -256,23 +192,16 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
     {
         pointerPosition = Vector2.zero;
 
-        if (pointerPositionAction == null)
+        if (pointerPositionAction == null || pointerPositionAction.action == null)
         {
             return false;
         }
 
-        InputAction action = pointerPositionAction.action;
-
-        if (action == null)
-        {
-            return false;
-        }
-
-        foreach (InputControl control in action.controls)
+        foreach (InputControl control in pointerPositionAction.action.controls)
         {
             if (control.valueType == typeof(Vector2))
             {
-                pointerPosition = action.ReadValue<Vector2>();
+                pointerPosition = pointerPositionAction.action.ReadValue<Vector2>();
                 return true;
             }
         }
@@ -287,6 +216,11 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     private void SetObjectsEnabled(bool isEnabled)
     {
+        if (objectsToDisableWhileBuilding == null)
+        {
+            return;
+        }
+
         foreach (GameObject sceneObject in objectsToDisableWhileBuilding)
         {
             if (sceneObject != null)
