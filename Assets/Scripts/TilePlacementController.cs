@@ -25,6 +25,12 @@ public class TilePlacementController : MonoBehaviour
 
     [Header("Grid Settings")]
     [SerializeField] private HexOrientation orientation = HexOrientation.FlatTop;
+    [Tooltip("Measure the real tile mesh at startup and use that as the hex size so " +
+             "placed tiles sit perfectly flush (no gaps / overlaps). When off, the " +
+             "manual 'Hex Size' below is used instead.")]
+    [SerializeField] private bool autoCalibrateHexSize = true;
+    [Tooltip("Hex size (centre-to-corner radius) used when auto-calibration is off " +
+             "or no tile mesh could be measured.")]
     [SerializeField] private float hexSize = 0.1f;
 
     [Header("Parents")]
@@ -32,7 +38,56 @@ public class TilePlacementController : MonoBehaviour
 
     private void Start()
     {
+        CalibrateHexSize();
+        HexGridLayout.Publish(hexSize, orientation);
+
         StartPrototypeGame();
+    }
+
+    // Measures the actual rendered tile so the layout spacing matches the mesh
+    // exactly. This removes the need to hand-tune 'hexSize' to the model: a wrong
+    // value is exactly what produces the visible gaps between tiles.
+    private void CalibrateHexSize()
+    {
+        if (!autoCalibrateHexSize)
+        {
+            return;
+        }
+
+        GameObject tilePrefab = currentTileController != null
+            ? currentTileController.BaseTilePrefab
+            : startTilePrefab;
+
+        if (tilePrefab == null)
+        {
+            Debug.LogWarning(
+                "Cannot auto-calibrate hex size: no tile prefab available. " +
+                "Falling back to the manual Hex Size.");
+            return;
+        }
+
+        // Probe a throwaway instance so we read the REAL imported meshes and their
+        // transforms (a prefab asset cannot report renderer world bounds reliably).
+        GameObject probe = Instantiate(tilePrefab, tileParent);
+        probe.transform.localPosition = Vector3.zero;
+        probe.transform.localRotation = Quaternion.identity;
+
+        bool measured = HexGridMath.TryMeasureHexSize(probe, tileParent, out float measuredSize);
+
+        // Hide before destruction so the probe never renders for a frame.
+        probe.SetActive(false);
+        Destroy(probe);
+
+        if (measured && measuredSize > 0f)
+        {
+            hexSize = measuredSize;
+        }
+        else
+        {
+            Debug.LogWarning(
+                "Hex size auto-calibration failed (no renderers found on the tile " +
+                "prefab). Falling back to the manual Hex Size.");
+        }
     }
 
     private void StartPrototypeGame()
@@ -186,10 +241,13 @@ public class TilePlacementController : MonoBehaviour
         Vector3 position = HexGridMath.HexToWorld(coord, hexSize, orientation);
 
         GameObject tileObject = Instantiate(tilePrefab, tileParent);
-        tileObject.transform.localPosition = position;
         tileObject.transform.localRotation = rotation;
 
         TileObjectSetup.ApplyData(tileObject, tileData);
+
+        // Centre the rendered mesh on the cell (the mesh pivot is not at its
+        // geometric centre, so this must happen after the rotation is applied).
+        HexGridMath.AlignTileVisualToCell(tileObject, position);
 
         PlacedTile placedTile = tileObject.GetComponent<PlacedTile>();
 

@@ -67,7 +67,9 @@ public class EdgeHighlightVisualizer : MonoBehaviour
         }
 
         int used = 0;
-        Vector3 tileCenter = HexGridMath.HexToWorld(coord, hexSize, orientation);
+        float resolvedHexSize = HexGridLayout.ResolveSize(hexSize);
+        HexOrientation resolvedOrientation = HexGridLayout.ResolveOrientation(orientation);
+        Vector3 tileCenter = HexGridMath.HexToWorld(coord, resolvedHexSize, resolvedOrientation);
 
         for (int side = 0; side < 6; side++)
         {
@@ -96,7 +98,7 @@ public class EdgeHighlightVisualizer : MonoBehaviour
 
             used++;
 
-            Vector3 neighborCenter = HexGridMath.HexToWorld(neighborCoord, hexSize, orientation);
+            Vector3 neighborCenter = HexGridMath.HexToWorld(neighborCoord, resolvedHexSize, resolvedOrientation);
             PlaceHighlight(highlight, tileCenter, neighborCenter);
         }
 

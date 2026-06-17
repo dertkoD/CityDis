@@ -37,12 +37,17 @@ public class HoverTilePreviewController : MonoBehaviour
         currentCoord = coord;
         hasPreview = true;
 
-        Vector3 position = HexGridMath.HexToWorld(coord, hexSize, orientation);
-        position.y += previewHeight;
+        Vector3 position = HexGridMath.HexToWorld(
+            coord,
+            HexGridLayout.ResolveSize(hexSize),
+            HexGridLayout.ResolveOrientation(orientation));
 
-        previewInstance.transform.localPosition = position;
         previewInstance.transform.localRotation = currentTileController.CurrentRotation;
         previewInstance.SetActive(true);
+
+        // Match the placement logic: centre the rendered mesh on the cell (with the
+        // preview floating slightly above the board).
+        HexGridMath.AlignTileVisualToCell(previewInstance, position, previewHeight);
     }
 
     public void RefreshRotation()

@@ -63,6 +63,135 @@ public static class HexGridMath
         }
     }
 
+    // Measures the hex "size" (circumradius, i.e. centre-to-corner distance) of an
+    // ACTUAL tile so the layout spacing matches the model exactly, instead of
+    // relying on a hand-tuned number that has to be kept in sync with the mesh.
+    //
+    // For a regular hexagon laid flat on the XZ plane the corner-to-corner span is
+    // 2 * size and the flat-to-flat span is sqrt(3) * size, so the larger of the
+    // two horizontal extents is always the corner-to-corner one; halving it gives
+    // the size that HexToWorld needs for neighbours to sit flush.
+    //
+    // The result is expressed in the local space of `referenceParent` (the same
+    // space HexToWorld outputs into, i.e. the tileParent), so any scale on that
+    // parent is divided out. Pass the instance (not the prefab asset) so the real
+    // imported meshes and their transforms are measured.
+    public static bool TryMeasureHexSize(
+        GameObject tileInstance,
+        Transform referenceParent,
+        out float hexSize)
+    {
+        hexSize = 0f;
+
+        if (!TryGetVisualBounds(tileInstance, out Bounds bounds))
+        {
+            return false;
+        }
+
+        Vector3 parentScale = referenceParent != null ? referenceParent.lossyScale : Vector3.one;
+
+        float sizeX = bounds.size.x / Mathf.Max(1e-6f, Mathf.Abs(parentScale.x));
+        float sizeZ = bounds.size.z / Mathf.Max(1e-6f, Mathf.Abs(parentScale.z));
+
+        float diameter = Mathf.Max(sizeX, sizeZ);
+
+        if (diameter <= 0f)
+        {
+            return false;
+        }
+
+        hexSize = diameter * 0.5f;
+        return true;
+    }
+
+    // Places a freshly-instantiated tile so the CENTRE of its rendered mesh lands
+    // exactly on the cell, regardless of the tile's rotation.
+    //
+    // This matters because the tile mesh's geometric centre is not at the prefab's
+    // transform origin (the point it is rotated around). If we only set the root's
+    // position, tiles with different rotations swing their visuals off in different
+    // directions, which is why some neighbours touched and others left big gaps.
+    // Measuring the rendered centre AFTER applying the rotation and shifting the
+    // root to compensate makes every tile line up the same way.
+    //
+    // Call this once, after the tile has been instantiated (under its final parent),
+    // its data applied and its rotation set. `cellLocalPosition` is the HexToWorld
+    // result (the cell centre in the parent's local space). `extraLocalHeight` lets
+    // callers float the tile above the board (e.g. the hover preview).
+    public static void AlignTileVisualToCell(
+        GameObject tileInstance,
+        Vector3 cellLocalPosition,
+        float extraLocalHeight = 0f)
+    {
+        if (tileInstance == null)
+        {
+            return;
+        }
+
+        Transform tileTransform = tileInstance.transform;
+        Transform parent = tileTransform.parent;
+
+        Vector3 targetLocal = cellLocalPosition;
+        targetLocal.y += extraLocalHeight;
+
+        // Default: position by the root (used if the tile has no renderers yet).
+        tileTransform.localPosition = targetLocal;
+
+        if (!TryGetVisualBounds(tileInstance, out Bounds bounds))
+        {
+            return;
+        }
+
+        Vector3 targetWorld = parent != null
+            ? parent.TransformPoint(targetLocal)
+            : targetLocal;
+
+        // Shift only in the board plane so the configured height is preserved.
+        Vector3 delta = targetWorld - bounds.center;
+        delta.y = 0f;
+
+        tileTransform.position += delta;
+    }
+
+    private static bool TryGetVisualBounds(GameObject tileInstance, out Bounds bounds)
+    {
+        bounds = default;
+
+        if (tileInstance == null)
+        {
+            return false;
+        }
+
+        Renderer[] renderers = tileInstance.GetComponentsInChildren<Renderer>();
+
+        if (renderers == null || renderers.Length == 0)
+        {
+            return false;
+        }
+
+        bool hasBounds = false;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        return hasBounds;
+    }
+
     public static HexCoord WorldToHex(Vector3 worldPosition, float hexSize, HexOrientation orientation)
     {
         float q;

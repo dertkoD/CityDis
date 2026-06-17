@@ -91,7 +91,9 @@ public class BoardQuestMarkVisualizer : MonoBehaviour
 
                 used++;
 
-                Vector3 position = target.GetLayoutCentroid(hexSize, orientation);
+                Vector3 position = target.GetLayoutCentroid(
+                    HexGridLayout.ResolveSize(hexSize),
+                    HexGridLayout.ResolveOrientation(orientation));
                 position.y += heightOffset;
 
                 int remaining = Mathf.Max(0, quest.requiredCount - quest.currentProgress);
