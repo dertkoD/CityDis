@@ -1766,7 +1766,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c67d4aff2c911bc40b1078039c137e33, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TileDataGenerator
-  emptyCenterChance: 0.08
+  emptyCenterChance: 0.2
   plainWeight: 0.5
   forestWeight: 0.4
   mountainsWeight: 0.4
