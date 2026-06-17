@@ -94,6 +94,11 @@ public class House3DBuilder : MonoBehaviour
         }
 
         BuildHouse(placedTile.transform, houseBuildData);
+
+        // Turn the Empty tile into a City tile so the house can only be built
+        // once and clicking it again will not reopen the mini game.
+        placedTile.SetCenterTerrain(TerrainType.City);
+
         return true;
     }
 
