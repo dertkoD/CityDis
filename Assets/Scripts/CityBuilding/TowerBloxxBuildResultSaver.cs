@@ -4,7 +4,12 @@ using UnityEngine.SceneManagement;
 
 // Runs in the 2D TowerBloxxScene. When the player finishes the mini game it
 // turns the stacked blocks into scale-independent HouseBuildData and hands it
-// back to the 3D scene through CityBuildSession.
+// back through CityBuildSession.
+//
+// When the scene was opened from the 3D map, the map's EmptyTerrainSceneLoader
+// owns the transition back (unload + fade), so this script only reports the
+// result. When the 2D scene is run on its own, it falls back to loading the
+// map scene directly.
 public class TowerBloxxBuildResultSaver : MonoBehaviour
 {
     [Header("References")]
@@ -12,13 +17,9 @@ public class TowerBloxxBuildResultSaver : MonoBehaviour
     [SerializeField] private TowerStack towerStack;
 
     [Header("Scene")]
-    [Tooltip("Scene to load when the build session was NOT started additively " +
-             "(i.e. the player opened this scene directly for testing).")]
+    [Tooltip("Loaded only when the 2D scene was started on its own (no active " +
+             "build session coming from the 3D map).")]
     [SerializeField] private string tileSceneName = "Tile3DScene";
-
-    [Tooltip("When the scene was opened additively from the 3D map, just unload " +
-             "this scene instead of loading the map scene again.")]
-    [SerializeField] private bool unloadCurrentSceneWhenDone = true;
 
     private void OnEnable()
     {
@@ -38,19 +39,15 @@ public class TowerBloxxBuildResultSaver : MonoBehaviour
 
     private void SaveHouseAndReturnToMap()
     {
-        HouseBuildData houseBuildData = BuildHouseData();
+        bool startedFromMap = CityBuildSession.HasPendingTile;
 
-        bool shouldUnloadCurrentScene = unloadCurrentSceneWhenDone && CityBuildSession.HasPendingTile;
+        CityBuildSession.CompleteBuilding(BuildHouseData());
 
-        CityBuildSession.CompleteBuilding(houseBuildData);
-
-        if (shouldUnloadCurrentScene)
+        if (!startedFromMap)
         {
-            SceneManager.UnloadSceneAsync(gameObject.scene);
-            return;
+            // Standalone test run: there is no 3D loader to bring us back.
+            SceneManager.LoadScene(tileSceneName);
         }
-
-        SceneManager.LoadScene(tileSceneName);
     }
 
     private HouseBuildData BuildHouseData()

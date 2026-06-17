@@ -1,13 +1,18 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
-// Lives in the 3D map scene. Opens the 2D Tower Bloxx scene ONLY when the player
-// clicks directly on the Empty center of an already placed tile.
+// Lives in the 3D map scene and owns the whole transition to/from the 2D Tower
+// Bloxx mini game.
 //
-// It deliberately does NOT react to:
-//   - clicks that place a tile (placing an Empty tile must not open the builder),
-//   - clicks on empty ground near (but not on) an Empty tile.
+// The 3D scene is kept loaded (additively) the entire time so the map state is
+// preserved, but while the player is in the 2D game it is fully hidden:
+//   - the 2D scene becomes the ACTIVE scene (so things the 2D game spawns, like
+//     crane blocks, live in the 2D scene and are destroyed when it unloads, and
+//     Camera.main resolves to the 2D camera),
+//   - the 3D camera / canvas / input objects are disabled (no bleed-through),
+//   - the change is wrapped in a fade so it looks like a real scene transition.
 public class EmptyTerrainSceneLoader : MonoBehaviour
 {
     [Header("References")]
@@ -23,16 +28,23 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     [Header("Scene")]
     [SerializeField] private string towerBloxxSceneName = "TowerBloxxScene";
-    [SerializeField] private LoadSceneMode loadSceneMode = LoadSceneMode.Additive;
+
+    [Tooltip("3D objects to hide while the 2D game is open. Assign the 3D Main " +
+             "Camera, the 3D Canvas and the 3D EventSystem here (and anything " +
+             "else that should not show through). Do NOT add this object itself.")]
     [SerializeField] private GameObject[] objectsToDisableWhileBuilding;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs;
 
+    private Scene mapScene;
     private bool clickRequested;
+    private bool isBusy;
+    private bool ownsSession;
 
     private void Awake()
     {
+        mapScene = gameObject.scene;
         CityBuildSession.HouseCompleted += OnHouseCompleted;
     }
 
@@ -85,8 +97,7 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
     }
 
     // Processed in LateUpdate so it runs AFTER tile placement has been handled
-    // this frame (placement happens in input callbacks / Update). This is what
-    // lets us reliably ignore the click that placed a tile.
+    // this frame; that lets us reliably ignore the click that placed a tile.
     private void LateUpdate()
     {
         if (!clickRequested)
@@ -100,7 +111,7 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     private void TryOpenTowerBloxxScene()
     {
-        if (CityBuildSession.HasPendingTile)
+        if (isBusy || CityBuildSession.HasPendingTile)
         {
             return;
         }
@@ -129,20 +140,93 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         }
 
         Log($"Opening {towerBloxxSceneName} for tile {placedTile.Coord}.");
+        StartCoroutine(OpenRoutine(placedTile.Coord));
+    }
 
-        CityBuildSession.StartBuilding(placedTile.Coord);
+    private IEnumerator OpenRoutine(HexCoord coord)
+    {
+        isBusy = true;
+        ownsSession = true;
+        CityBuildSession.StartBuilding(coord);
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeOut();
+        }
+
         SetObjectsEnabled(false);
 
-        try
+        AsyncOperation load = SceneManager.LoadSceneAsync(towerBloxxSceneName, LoadSceneMode.Additive);
+
+        while (load != null && !load.isDone)
         {
-            SceneManager.LoadScene(towerBloxxSceneName, loadSceneMode);
+            yield return null;
         }
-        catch (System.Exception exception)
+
+        Scene towerScene = SceneManager.GetSceneByName(towerBloxxSceneName);
+
+        if (towerScene.IsValid())
         {
-            CityBuildSession.CancelBuilding();
-            SetObjectsEnabled(true);
-            Debug.LogException(exception);
+            SceneManager.SetActiveScene(towerScene);
         }
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeIn();
+        }
+
+        isBusy = false;
+    }
+
+    // The 2D game raises CityBuildSession.HouseCompleted when it is done. The
+    // 3D House3DBuilder (still alive in this scene) builds the house parented to
+    // the tile, so it ends up in the map scene regardless of the active scene.
+    private void OnHouseCompleted(HexCoord tileCoord, HouseBuildData houseBuildData)
+    {
+        if (!ownsSession)
+        {
+            // Not a session this loader started, nothing to unload here.
+            return;
+        }
+
+        ownsSession = false;
+        StartCoroutine(ReturnRoutine());
+    }
+
+    private IEnumerator ReturnRoutine()
+    {
+        isBusy = true;
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeOut();
+        }
+
+        Scene towerScene = SceneManager.GetSceneByName(towerBloxxSceneName);
+
+        if (towerScene.IsValid() && towerScene.isLoaded)
+        {
+            AsyncOperation unload = SceneManager.UnloadSceneAsync(towerScene);
+
+            while (unload != null && !unload.isDone)
+            {
+                yield return null;
+            }
+        }
+
+        if (mapScene.IsValid())
+        {
+            SceneManager.SetActiveScene(mapScene);
+        }
+
+        SetObjectsEnabled(true);
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeIn();
+        }
+
+        isBusy = false;
     }
 
     // Strict: the click must land directly on the enabled Empty-center collider.
@@ -207,11 +291,6 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         }
 
         return false;
-    }
-
-    private void OnHouseCompleted(HexCoord tileCoord, HouseBuildData houseBuildData)
-    {
-        SetObjectsEnabled(true);
     }
 
     private void SetObjectsEnabled(bool isEnabled)
