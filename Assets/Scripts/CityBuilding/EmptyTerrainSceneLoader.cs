@@ -1,7 +1,20 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 
+// Lives in the 3D map scene and owns the whole transition to/from the 2D Tower
+// Bloxx mini game.
+//
+// The 3D scene is kept loaded (additively) so the map state is preserved, but
+// while the player is in the 2D game it is FULLY hidden:
+//   - every root object of the map scene is deactivated (except this controller),
+//     so the 2D camera cannot see any 3D geometry,
+//   - the 2D scene is made the ACTIVE scene as soon as it loads (before its
+//     scripts' Start runs), so everything the 2D game spawns (e.g. crane blocks)
+//     lives in the 2D scene and is destroyed when it unloads,
+//   - the whole thing is wrapped in a fade so it looks like a real transition.
 public class EmptyTerrainSceneLoader : MonoBehaviour
 {
     [Header("References")]
@@ -14,18 +27,23 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     [Header("Raycast")]
     [SerializeField] private float rayDistance = 100f;
-    [SerializeField] private float mapPlaneY = 0f;
 
     [Header("Scene")]
     [SerializeField] private string towerBloxxSceneName = "TowerBloxxScene";
-    [SerializeField] private LoadSceneMode loadSceneMode = LoadSceneMode.Additive;
-    [SerializeField] private GameObject[] objectsToDisableWhileBuilding;
 
     [Header("Debug")]
     [SerializeField] private bool debugLogs;
 
+    private Scene mapScene;
+    private readonly List<GameObject> deactivatedRoots = new();
+
+    private bool clickRequested;
+    private bool isBusy;
+    private bool ownsSession;
+
     private void Awake()
     {
+        mapScene = gameObject.scene;
         CityBuildSession.HouseCompleted += OnHouseCompleted;
     }
 
@@ -36,14 +54,11 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     private void OnEnable()
     {
-        if (clickAction == null)
+        if (clickAction != null)
         {
-            Log("Click Action is not assigned. Mouse fallback can still handle clicks.");
-            return;
+            clickAction.action.performed += OnClickPerformed;
+            clickAction.action.Enable();
         }
-
-        clickAction.action.performed += OnClickPerformed;
-        clickAction.action.Enable();
 
         if (pointerPositionAction != null)
         {
@@ -67,74 +82,194 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
 
     private void OnClickPerformed(InputAction.CallbackContext context)
     {
-        TryOpenTowerBloxxScene("InputAction");
+        clickRequested = true;
     }
 
     private void Update()
     {
-        if (!useMouseButtonFallback || Mouse.current == null)
+        if (useMouseButtonFallback &&
+            Mouse.current != null &&
+            Mouse.current.leftButton.wasPressedThisFrame)
+        {
+            clickRequested = true;
+        }
+    }
+
+    // Processed in LateUpdate so it runs AFTER tile placement has been handled
+    // this frame; that lets us reliably ignore the click that placed a tile.
+    private void LateUpdate()
+    {
+        if (!clickRequested)
         {
             return;
         }
 
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            TryOpenTowerBloxxScene("Mouse.current.leftButton");
-        }
+        clickRequested = false;
+        TryOpenTowerBloxxScene();
     }
 
-    private void TryOpenTowerBloxxScene(string source)
+    private void TryOpenTowerBloxxScene()
     {
-        Log($"Click received from {source}.");
-
-        if (CityBuildSession.HasPendingTile)
+        if (isBusy || CityBuildSession.HasPendingTile)
         {
-            Log("Ignored click because a city build session is already pending.");
+            return;
+        }
+
+        if (TilePlacementController.LastPlacementFrame == Time.frameCount)
+        {
+            Log("Ignored click because a tile was placed this frame.");
             return;
         }
 
         if (mainCamera == null)
         {
-            Debug.LogError("Main Camera is not assigned on EmptyTerrainSceneLoader.");
+            Debug.LogError("EmptyTerrainSceneLoader: Main Camera is not assigned.", this);
             return;
         }
 
-        PlacedTile placedTile = GetClickedEmptyTile(out Vector3 hitPoint);
-
-        if (placedTile == null)
+        if (!TryGetClickedEmptyTile(out PlacedTile placedTile))
         {
-            Log("No Empty center click area was hit.");
             return;
         }
 
-        TerrainType centerTerrain = placedTile.GetCenterTerrain();
-
-        if (centerTerrain != TerrainType.Empty)
+        if (placedTile.GetCenterTerrain() != TerrainType.Empty)
         {
-            Log($"Hit tile {placedTile.name}, but center terrain is {centerTerrain}, not Empty.");
+            Log($"Hit tile {placedTile.name}, but its center terrain is not Empty.");
             return;
         }
 
         Log($"Opening {towerBloxxSceneName} for tile {placedTile.Coord}.");
+        StartCoroutine(OpenRoutine(placedTile.Coord));
+    }
 
-        CityBuildSession.StartBuilding(placedTile.Coord);
-        SetObjectsEnabled(false);
+    private IEnumerator OpenRoutine(HexCoord coord)
+    {
+        isBusy = true;
+        ownsSession = true;
+        CityBuildSession.StartBuilding(coord);
 
-        try
+        if (ScreenFader.Instance != null)
         {
-            SceneManager.LoadScene(towerBloxxSceneName, loadSceneMode);
+            yield return ScreenFader.Instance.FadeOut();
         }
-        catch (System.Exception exception)
+
+        HideMapScene();
+
+        // Make the 2D scene active the moment it is loaded (before its Start
+        // runs), so crane blocks spawn there and not in the hidden map scene.
+        SceneManager.sceneLoaded += OnTowerSceneLoaded;
+
+        AsyncOperation load = SceneManager.LoadSceneAsync(towerBloxxSceneName, LoadSceneMode.Additive);
+
+        while (load != null && !load.isDone)
         {
-            CityBuildSession.CancelBuilding();
-            SetObjectsEnabled(true);
-            Debug.LogException(exception);
+            yield return null;
+        }
+
+        SceneManager.sceneLoaded -= OnTowerSceneLoaded;
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeIn();
+        }
+
+        isBusy = false;
+    }
+
+    private void OnTowerSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == towerBloxxSceneName)
+        {
+            SceneManager.SetActiveScene(scene);
         }
     }
 
-    private PlacedTile GetClickedEmptyTile(out Vector3 hitPoint)
+    // The 2D game raises CityBuildSession.HouseCompleted when it is done. The
+    // 3D House3DBuilder (still alive on this object) builds the house parented to
+    // the tile, so it ends up in the map scene (inactive for now) and becomes
+    // visible again when the map scene is shown.
+    private void OnHouseCompleted(HexCoord tileCoord, HouseBuildData houseBuildData)
     {
-        hitPoint = Vector3.zero;
+        if (!ownsSession)
+        {
+            return;
+        }
+
+        ownsSession = false;
+        StartCoroutine(ReturnRoutine());
+    }
+
+    private IEnumerator ReturnRoutine()
+    {
+        isBusy = true;
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeOut();
+        }
+
+        Scene towerScene = SceneManager.GetSceneByName(towerBloxxSceneName);
+
+        if (towerScene.IsValid() && towerScene.isLoaded)
+        {
+            AsyncOperation unload = SceneManager.UnloadSceneAsync(towerScene);
+
+            while (unload != null && !unload.isDone)
+            {
+                yield return null;
+            }
+        }
+
+        if (mapScene.IsValid())
+        {
+            SceneManager.SetActiveScene(mapScene);
+        }
+
+        ShowMapScene();
+
+        if (ScreenFader.Instance != null)
+        {
+            yield return ScreenFader.Instance.FadeIn();
+        }
+
+        isBusy = false;
+    }
+
+    private void HideMapScene()
+    {
+        deactivatedRoots.Clear();
+
+        GameObject self = transform.root.gameObject;
+
+        foreach (GameObject root in mapScene.GetRootGameObjects())
+        {
+            if (root == self || !root.activeSelf)
+            {
+                continue;
+            }
+
+            root.SetActive(false);
+            deactivatedRoots.Add(root);
+        }
+    }
+
+    private void ShowMapScene()
+    {
+        foreach (GameObject root in deactivatedRoots)
+        {
+            if (root != null)
+            {
+                root.SetActive(true);
+            }
+        }
+
+        deactivatedRoots.Clear();
+    }
+
+    // Strict: the click must land directly on the enabled Empty-center collider.
+    private bool TryGetClickedEmptyTile(out PlacedTile placedTile)
+    {
+        placedTile = null;
 
         Vector2 pointerPosition = ReadPointerPosition();
         Ray ray = mainCamera.ScreenPointToRay(pointerPosition);
@@ -144,92 +279,14 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         if (EmptyTerrainClickArea.TryRaycastEmptyArea(
                 ray,
                 rayDistance,
-                out EmptyTerrainClickArea raycastArea,
-                out hitPoint))
+                out EmptyTerrainClickArea emptyTerrainClickArea,
+                out _) &&
+            emptyTerrainClickArea.TryGetPlacedTile(out placedTile))
         {
-            if (!raycastArea.TryGetPlacedTile(out PlacedTile raycastTile))
-            {
-                Log("Direct Empty-area raycast hit an area, but it has no PlacedTile.");
-                return null;
-            }
-
-            Log($"Direct Empty-area raycast hit {raycastTile.name} at {hitPoint}.");
-            return raycastTile;
+            return true;
         }
 
-        if (TryGetEmptyTileFromMapPlane(ray, out PlacedTile planeTile, out hitPoint))
-        {
-            return planeTile;
-        }
-
-        RaycastHit[] hits = Physics.RaycastAll(
-            ray,
-            rayDistance,
-            ~0,
-            QueryTriggerInteraction.Collide
-        );
-
-        if (hits.Length == 0)
-        {
-            Log("Physics raycast returned 0 hits after map-plane check.");
-            return null;
-        }
-
-        System.Array.Sort(hits, (a, b) => a.distance.CompareTo(b.distance));
-        Log($"Physics raycast returned {hits.Length} hit(s). First hit: {hits[0].collider.name}");
-
-        foreach (RaycastHit hit in hits)
-        {
-            EmptyTerrainClickArea emptyTerrainClickArea =
-                hit.collider.GetComponentInParent<EmptyTerrainClickArea>();
-
-            if (emptyTerrainClickArea != null &&
-                emptyTerrainClickArea.TryGetPlacedTile(out PlacedTile placedTile))
-            {
-                hitPoint = hit.point;
-                return placedTile;
-            }
-
-            if (emptyTerrainClickArea != null)
-            {
-                Log($"Hit EmptyTerrainClickArea on {hit.collider.name}, but no PlacedTile was found in parents.");
-            }
-        }
-
-        return null;
-    }
-
-    private bool TryGetEmptyTileFromMapPlane(Ray ray, out PlacedTile placedTile, out Vector3 hitPoint)
-    {
-        placedTile = null;
-        hitPoint = Vector3.zero;
-
-        Plane mapPlane = new Plane(Vector3.up, new Vector3(0f, mapPlaneY, 0f));
-
-        if (!mapPlane.Raycast(ray, out float enter))
-        {
-            Log("Mouse ray did not intersect map plane.");
-            return false;
-        }
-
-        hitPoint = ray.GetPoint(enter);
-
-        if (!EmptyTerrainClickArea.TryGetEmptyAreaAtWorldPoint(
-                hitPoint,
-                out EmptyTerrainClickArea emptyTerrainClickArea))
-        {
-            Log($"Map-plane point {hitPoint} is outside all active Empty click areas.");
-            return false;
-        }
-
-        if (!emptyTerrainClickArea.TryGetPlacedTile(out placedTile))
-        {
-            Log("Map-plane hit EmptyTerrainClickArea, but it has no PlacedTile.");
-            return false;
-        }
-
-        Log($"Map-plane hit Empty click area on {placedTile.name} at {hitPoint}.");
-        return true;
+        return false;
     }
 
     private Vector2 ReadPointerPosition()
@@ -256,44 +313,21 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
     {
         pointerPosition = Vector2.zero;
 
-        if (pointerPositionAction == null)
+        if (pointerPositionAction == null || pointerPositionAction.action == null)
         {
             return false;
         }
 
-        InputAction action = pointerPositionAction.action;
-
-        if (action == null)
-        {
-            return false;
-        }
-
-        foreach (InputControl control in action.controls)
+        foreach (InputControl control in pointerPositionAction.action.controls)
         {
             if (control.valueType == typeof(Vector2))
             {
-                pointerPosition = action.ReadValue<Vector2>();
+                pointerPosition = pointerPositionAction.action.ReadValue<Vector2>();
                 return true;
             }
         }
 
         return false;
-    }
-
-    private void OnHouseCompleted(HexCoord tileCoord, HouseBuildData houseBuildData)
-    {
-        SetObjectsEnabled(true);
-    }
-
-    private void SetObjectsEnabled(bool isEnabled)
-    {
-        foreach (GameObject sceneObject in objectsToDisableWhileBuilding)
-        {
-            if (sceneObject != null)
-            {
-                sceneObject.SetActive(isEnabled);
-            }
-        }
     }
 
     private void Log(string message)

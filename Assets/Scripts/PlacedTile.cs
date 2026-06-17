@@ -47,6 +47,16 @@ public class PlacedTile : MonoBehaviour
         return tileDefinition.GetCenter();
     }
 
+    // Changes the center terrain at runtime. Used to turn an Empty tile into a
+    // City tile once its house has been built, so it cannot be rebuilt.
+    public void SetCenterTerrain(TerrainType terrainType)
+    {
+        if (tileDefinition != null && tileDefinition.Data != null)
+        {
+            tileDefinition.Data.Center = terrainType;
+        }
+    }
+
     private int NormalizeRotationSteps(int steps)
     {
         return Mod(steps, 6);

@@ -2,6 +2,11 @@ using UnityEngine;
 
 public class TilePlacementController : MonoBehaviour
 {
+    // Frame on which the most recent tile was placed. Used by other systems
+    // (e.g. EmptyTerrainSceneLoader) to ignore the click that placed a tile so
+    // it does not also trigger an unrelated action on the same click.
+    public static int LastPlacementFrame { get; private set; } = -1;
+
     [Header("References")]
     [SerializeField] private BoardGrid boardGrid;
     [SerializeField] private AvailableCellManager availableCellManager;
@@ -43,7 +48,7 @@ public class TilePlacementController : MonoBehaviour
 
         HexCoord startCoord = new HexCoord(0, 0);
 
-        TileData startTileData = currentTileController.GenerateRandomTileData();
+        TileData startTileData = CreatePlainTileData();
 
         PlaceTile(
             currentTileController.BaseTilePrefab,
@@ -144,6 +149,21 @@ public class TilePlacementController : MonoBehaviour
         );
     }
 
+    // The starting tile in the middle of the board is always fully Plain
+    // (center and all six sides), instead of a random tile.
+    private TileData CreatePlainTileData()
+    {
+        TileData tileData = new TileData();
+        tileData.Center = TerrainType.Plain;
+
+        for (int side = 0; side < 6; side++)
+        {
+            tileData.SetSide(side, TerrainType.Plain);
+        }
+
+        return tileData;
+    }
+
     private void PlaceTile(
         GameObject tilePrefab,
         TileData tileData,
@@ -186,5 +206,7 @@ public class TilePlacementController : MonoBehaviour
         placedTile.Initialize(coord, rotationSteps);
 
         boardGrid.AddTile(coord, placedTile);
+
+        LastPlacementFrame = Time.frameCount;
     }
 }
