@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -6,13 +7,14 @@ using UnityEngine.SceneManagement;
 // Lives in the 3D map scene and owns the whole transition to/from the 2D Tower
 // Bloxx mini game.
 //
-// The 3D scene is kept loaded (additively) the entire time so the map state is
-// preserved, but while the player is in the 2D game it is fully hidden:
-//   - the 2D scene becomes the ACTIVE scene (so things the 2D game spawns, like
-//     crane blocks, live in the 2D scene and are destroyed when it unloads, and
-//     Camera.main resolves to the 2D camera),
-//   - the 3D camera / canvas / input objects are disabled (no bleed-through),
-//   - the change is wrapped in a fade so it looks like a real scene transition.
+// The 3D scene is kept loaded (additively) so the map state is preserved, but
+// while the player is in the 2D game it is FULLY hidden:
+//   - every root object of the map scene is deactivated (except this controller),
+//     so the 2D camera cannot see any 3D geometry,
+//   - the 2D scene is made the ACTIVE scene as soon as it loads (before its
+//     scripts' Start runs), so everything the 2D game spawns (e.g. crane blocks)
+//     lives in the 2D scene and is destroyed when it unloads,
+//   - the whole thing is wrapped in a fade so it looks like a real transition.
 public class EmptyTerrainSceneLoader : MonoBehaviour
 {
     [Header("References")]
@@ -29,15 +31,12 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
     [Header("Scene")]
     [SerializeField] private string towerBloxxSceneName = "TowerBloxxScene";
 
-    [Tooltip("3D objects to hide while the 2D game is open. Assign the 3D Main " +
-             "Camera, the 3D Canvas and the 3D EventSystem here (and anything " +
-             "else that should not show through). Do NOT add this object itself.")]
-    [SerializeField] private GameObject[] objectsToDisableWhileBuilding;
-
     [Header("Debug")]
     [SerializeField] private bool debugLogs;
 
     private Scene mapScene;
+    private readonly List<GameObject> deactivatedRoots = new();
+
     private bool clickRequested;
     private bool isBusy;
     private bool ownsSession;
@@ -154,7 +153,11 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
             yield return ScreenFader.Instance.FadeOut();
         }
 
-        SetObjectsEnabled(false);
+        HideMapScene();
+
+        // Make the 2D scene active the moment it is loaded (before its Start
+        // runs), so crane blocks spawn there and not in the hidden map scene.
+        SceneManager.sceneLoaded += OnTowerSceneLoaded;
 
         AsyncOperation load = SceneManager.LoadSceneAsync(towerBloxxSceneName, LoadSceneMode.Additive);
 
@@ -163,12 +166,7 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
             yield return null;
         }
 
-        Scene towerScene = SceneManager.GetSceneByName(towerBloxxSceneName);
-
-        if (towerScene.IsValid())
-        {
-            SceneManager.SetActiveScene(towerScene);
-        }
+        SceneManager.sceneLoaded -= OnTowerSceneLoaded;
 
         if (ScreenFader.Instance != null)
         {
@@ -178,14 +176,22 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         isBusy = false;
     }
 
+    private void OnTowerSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == towerBloxxSceneName)
+        {
+            SceneManager.SetActiveScene(scene);
+        }
+    }
+
     // The 2D game raises CityBuildSession.HouseCompleted when it is done. The
-    // 3D House3DBuilder (still alive in this scene) builds the house parented to
-    // the tile, so it ends up in the map scene regardless of the active scene.
+    // 3D House3DBuilder (still alive on this object) builds the house parented to
+    // the tile, so it ends up in the map scene (inactive for now) and becomes
+    // visible again when the map scene is shown.
     private void OnHouseCompleted(HexCoord tileCoord, HouseBuildData houseBuildData)
     {
         if (!ownsSession)
         {
-            // Not a session this loader started, nothing to unload here.
             return;
         }
 
@@ -219,7 +225,7 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
             SceneManager.SetActiveScene(mapScene);
         }
 
-        SetObjectsEnabled(true);
+        ShowMapScene();
 
         if (ScreenFader.Instance != null)
         {
@@ -227,6 +233,37 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         }
 
         isBusy = false;
+    }
+
+    private void HideMapScene()
+    {
+        deactivatedRoots.Clear();
+
+        GameObject self = transform.root.gameObject;
+
+        foreach (GameObject root in mapScene.GetRootGameObjects())
+        {
+            if (root == self || !root.activeSelf)
+            {
+                continue;
+            }
+
+            root.SetActive(false);
+            deactivatedRoots.Add(root);
+        }
+    }
+
+    private void ShowMapScene()
+    {
+        foreach (GameObject root in deactivatedRoots)
+        {
+            if (root != null)
+            {
+                root.SetActive(true);
+            }
+        }
+
+        deactivatedRoots.Clear();
     }
 
     // Strict: the click must land directly on the enabled Empty-center collider.
@@ -291,22 +328,6 @@ public class EmptyTerrainSceneLoader : MonoBehaviour
         }
 
         return false;
-    }
-
-    private void SetObjectsEnabled(bool isEnabled)
-    {
-        if (objectsToDisableWhileBuilding == null)
-        {
-            return;
-        }
-
-        foreach (GameObject sceneObject in objectsToDisableWhileBuilding)
-        {
-            if (sceneObject != null)
-            {
-                sceneObject.SetActive(isEnabled);
-            }
-        }
     }
 
     private void Log(string message)
