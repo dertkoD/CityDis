@@ -1,10 +1,14 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 public class TowerStack : MonoBehaviour
 {
     [SerializeField] private Transform startingTopPoint;
 
     private TowerBlock _topBlock;
+    private readonly List<TowerBlock> _successfulBlocks = new();
+
+    public IReadOnlyList<TowerBlock> SuccessfulBlocks => _successfulBlocks;
 
     public float TopY
     {
@@ -29,5 +33,10 @@ public class TowerStack : MonoBehaviour
     public void RegisterSuccessfulBlock(TowerBlock block)
     {
         _topBlock = block;
+
+        if (!_successfulBlocks.Contains(block))
+        {
+            _successfulBlocks.Add(block);
+        }
     }
 }

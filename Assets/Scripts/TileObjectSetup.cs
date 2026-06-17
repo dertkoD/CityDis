@@ -35,5 +35,16 @@ public static class TileObjectSetup
         }
 
         visualApplier.Apply(tileData);
+
+        EmptyTerrainClickArea[] emptyClickAreas =
+            tileObject.GetComponentsInChildren<EmptyTerrainClickArea>(true);
+
+        foreach (EmptyTerrainClickArea emptyClickArea in emptyClickAreas)
+        {
+            if (emptyClickArea != null)
+            {
+                emptyClickArea.SetTerrain(tileData.Center);
+            }
+        }
     }
 }

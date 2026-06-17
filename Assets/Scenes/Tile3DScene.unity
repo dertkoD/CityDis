@@ -720,6 +720,87 @@ Transform:
   m_Children: []
   m_Father: {fileID: 981011458}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &462390981
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 462390983}
+  - component: {fileID: 462390982}
+  - component: {fileID: 462390984}
+  m_Layer: 0
+  m_Name: CityBuildBridge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &462390982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462390981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1579b0b469b0e542870896fb476a71c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::EmptyTerrainSceneLoader
+  mainCamera: {fileID: 330585545}
+  boardGrid: {fileID: 981011457}
+  clickAction: {fileID: 1120369429361536294, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  pointerPositionAction: {fileID: -5630151704836100654, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  useMouseButtonFallback: 1
+  placedTileLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  rayDistance: 100
+  centerClickRadius: 0.04
+  mapPlaneY: 0
+  planeFallbackMaxTileDistance: 0.15
+  towerBloxxSceneName: TowerBloxxScene
+  loadSceneMode: 1
+  objectsToDisableWhileBuilding:
+  - {fileID: 827571206}
+  debugLogs: 1
+--- !u!4 &462390983
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462390981}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -73.47356, y: 977.6946, z: 301.01022}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &462390984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 462390981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cb5f94a49e39c9743bd96dfc0066e578, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::House3DBuilder
+  boardGrid: {fileID: 981011457}
+  block3DPrefab: {fileID: 8196136860952972636, guid: 96c08a35421a92b439e6929f9c2bb2a9, type: 3}
+  localOffsetOnTile: {x: 0, y: 0, z: 0}
+  horizontalScale: 0.1
+  verticalScale: 0.1
+  depth: 0.15
+  use2DRotation: 0
 --- !u!1 &463144438
 GameObject:
   m_ObjectHideFlags: 0
@@ -1012,6 +1093,63 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 981011458}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &827571206
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 827571209}
+  - component: {fileID: 827571208}
+  m_Layer: 0
+  m_Name: PlayerController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &827571208
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 827571206}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdee8c90d45b05a4e879130dea540a8c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputController
+  mainCamera: {fileID: 330585545}
+  currentTileController: {fileID: 981011460}
+  tilePlacementController: {fileID: 981011454}
+  hoverTilePreviewController: {fileID: 981011463}
+  edgeHighlightVisualizer: {fileID: 981011469}
+  clickAction: {fileID: 7624849267362713816, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  pointerPositionAction: {fileID: 3887201074659253865, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  rotateLeftAction: {fileID: 5080993326205455172, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  rotateRightAction: {fileID: -5887450333546559838, guid: 052faaac586de48259a63d0c4782560b, type: 3}
+  availableCellLayerMask:
+    serializedVersion: 2
+    m_Bits: 64
+  rayDistance: 100
+--- !u!4 &827571209
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 827571206}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &832575517
 GameObject:
@@ -1350,7 +1488,6 @@ GameObject:
   - component: {fileID: 981011462}
   - component: {fileID: 981011455}
   - component: {fileID: 981011454}
-  - component: {fileID: 981011459}
   - component: {fileID: 981011460}
   - component: {fileID: 981011463}
   - component: {fileID: 981011464}
@@ -1448,31 +1585,6 @@ Transform:
   - {fileID: 419231119}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &981011459
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 981011453}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bdee8c90d45b05a4e879130dea540a8c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PlayerInputController
-  mainCamera: {fileID: 330585545}
-  currentTileController: {fileID: 981011460}
-  tilePlacementController: {fileID: 981011454}
-  hoverTilePreviewController: {fileID: 981011463}
-  edgeHighlightVisualizer: {fileID: 981011469}
-  clickAction: {fileID: 7624849267362713816, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  pointerPositionAction: {fileID: 3887201074659253865, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  rotateLeftAction: {fileID: 5080993326205455172, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  rotateRightAction: {fileID: -5887450333546559838, guid: 052faaac586de48259a63d0c4782560b, type: 3}
-  availableCellLayerMask:
-    serializedVersion: 2
-    m_Bits: 64
-  rayDistance: 100
 --- !u!114 &981011460
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1885,3 +1997,5 @@ SceneRoots:
   - {fileID: 981011458}
   - {fileID: 611257273}
   - {fileID: 7677108}
+  - {fileID: 462390983}
+  - {fileID: 827571209}
