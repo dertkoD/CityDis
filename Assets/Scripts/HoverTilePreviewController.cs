@@ -37,7 +37,10 @@ public class HoverTilePreviewController : MonoBehaviour
         currentCoord = coord;
         hasPreview = true;
 
-        Vector3 position = HexGridMath.HexToWorld(coord, hexSize, orientation);
+        Vector3 position = HexGridMath.HexToWorld(
+            coord,
+            HexGridLayout.ResolveSize(hexSize),
+            HexGridLayout.ResolveOrientation(orientation));
         position.y += previewHeight;
 
         previewInstance.transform.localPosition = position;

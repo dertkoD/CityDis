@@ -107,7 +107,9 @@ public class GroupVisualizer : MonoBehaviour
 
                 used++;
 
-                Vector3 position = group.GetLayoutCentroid(hexSize, orientation);
+                Vector3 position = group.GetLayoutCentroid(
+                    HexGridLayout.ResolveSize(hexSize),
+                    HexGridLayout.ResolveOrientation(orientation));
                 position.y += heightOffset;
 
                 label.SetValue(size, GetColor(group.Family));

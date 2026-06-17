@@ -23,7 +23,10 @@ public class AvailableCellVisualizer : MonoBehaviour
                 continue;
             }
 
-            Vector3 position = HexGridMath.HexToWorld(coord, hexSize, orientation);
+            Vector3 position = HexGridMath.HexToWorld(
+                coord,
+                HexGridLayout.ResolveSize(hexSize),
+                HexGridLayout.ResolveOrientation(orientation));
 
             GameObject markerObject = Instantiate(markerPrefab, markerParent);
             markerObject.transform.localPosition = position;

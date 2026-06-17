@@ -63,6 +63,80 @@ public static class HexGridMath
         }
     }
 
+    // Measures the hex "size" (circumradius, i.e. centre-to-corner distance) of an
+    // ACTUAL tile so the layout spacing matches the rendered mesh exactly, instead
+    // of relying on a hand-tuned number that has to be kept in sync with the model.
+    //
+    // For a regular hexagon laid flat on the XZ plane the corner-to-corner span is
+    // 2 * size and the flat-to-flat span is sqrt(3) * size, so the larger of the
+    // two horizontal extents is always the corner-to-corner one. Halving it gives
+    // the size that HexToWorld needs for neighbours to sit perfectly flush.
+    //
+    // The result is expressed in the local space of `referenceParent` (the same
+    // space HexToWorld outputs into, i.e. the tileParent), so any scale on that
+    // parent is divided out. Pass the instance (not the prefab asset) so the real
+    // imported meshes and their transforms are measured.
+    public static bool TryMeasureHexSize(
+        GameObject tileInstance,
+        Transform referenceParent,
+        out float hexSize)
+    {
+        hexSize = 0f;
+
+        if (tileInstance == null)
+        {
+            return false;
+        }
+
+        Renderer[] renderers = tileInstance.GetComponentsInChildren<Renderer>();
+
+        if (renderers == null || renderers.Length == 0)
+        {
+            return false;
+        }
+
+        bool hasBounds = false;
+        Bounds bounds = default;
+
+        foreach (Renderer renderer in renderers)
+        {
+            if (renderer == null)
+            {
+                continue;
+            }
+
+            if (!hasBounds)
+            {
+                bounds = renderer.bounds;
+                hasBounds = true;
+            }
+            else
+            {
+                bounds.Encapsulate(renderer.bounds);
+            }
+        }
+
+        if (!hasBounds)
+        {
+            return false;
+        }
+
+        Vector3 parentScale = referenceParent != null ? referenceParent.lossyScale : Vector3.one;
+
+        float sizeX = bounds.size.x / Mathf.Max(1e-6f, Mathf.Abs(parentScale.x));
+        float sizeZ = bounds.size.z / Mathf.Max(1e-6f, Mathf.Abs(parentScale.z));
+
+        float diameter = Mathf.Max(sizeX, sizeZ);
+
+        if (diameter <= 0f)
+        {
+            return false;
+        }
+
+        hexSize = diameter * 0.5f;
+        return true;
+    }
+
     public static HexCoord WorldToHex(Vector3 worldPosition, float hexSize, HexOrientation orientation)
     {
         float q;
