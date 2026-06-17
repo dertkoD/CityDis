@@ -64,18 +64,13 @@ public static class HexGridMath
     }
 
     // Measures the hex "size" (circumradius, i.e. centre-to-corner distance) of an
-    // ACTUAL tile so the layout spacing matches the rendered mesh exactly, instead
-    // of relying on a hand-tuned number that has to be kept in sync with the model.
-    //
-    // For a regular hexagon laid flat on the XZ plane the corner-to-corner span is
-    // 2 * size and the flat-to-flat span is sqrt(3) * size, so the larger of the
-    // two horizontal extents is always the corner-to-corner one. Halving it gives
-    // the size that HexToWorld needs for neighbours to sit perfectly flush.
+    // ACTUAL tile so the layout spacing matches the model exactly, instead of
+    // relying on a hand-tuned number that has to be kept in sync with the mesh.
     //
     // The result is expressed in the local space of `referenceParent` (the same
     // space HexToWorld outputs into, i.e. the tileParent), so any scale on that
     // parent is divided out. Pass the instance (not the prefab asset) so the real
-    // imported meshes and their transforms are measured.
+    // transforms are measured.
     public static bool TryMeasureHexSize(
         GameObject tileInstance,
         Transform referenceParent,
@@ -87,6 +82,108 @@ public static class HexGridMath
         {
             return false;
         }
+
+        // Preferred: use the tile's side anchors (TileTerrainSlot). They are placed
+        // at the edge midpoints, i.e. exactly where two neighbouring tiles touch, so
+        // they give the spacing the tiles were authored for. This is robust against
+        // the renderer bounds being inflated by sloped/extruded sides of the tile
+        // body (which is what makes a bounds-based guess too big -> visible gaps).
+        if (TryMeasureFromSideAnchors(tileInstance, referenceParent, out hexSize))
+        {
+            return true;
+        }
+
+        // Fallback: derive it from the rendered footprint. For a regular hexagon the
+        // larger horizontal extent is the corner-to-corner span (2 * size).
+        return TryMeasureFromRendererBounds(tileInstance, referenceParent, out hexSize);
+    }
+
+    private static bool TryMeasureFromSideAnchors(
+        GameObject tileInstance,
+        Transform referenceParent,
+        out float hexSize)
+    {
+        hexSize = 0f;
+
+        TileTerrainSlot[] slots = tileInstance.GetComponentsInChildren<TileTerrainSlot>(true);
+
+        if (slots == null || slots.Length == 0)
+        {
+            return false;
+        }
+
+        Vector3 centre = Vector3.zero;
+        int count = 0;
+
+        // The shared reference frame: world positions scaled back into the parent's
+        // local space, where HexToWorld lives.
+        Matrix4x4 toLocal = referenceParent != null
+            ? referenceParent.worldToLocalMatrix
+            : Matrix4x4.identity;
+
+        Vector3[] sides = new Vector3[6];
+        bool[] hasSide = new bool[6];
+
+        foreach (TileTerrainSlot slot in slots)
+        {
+            if (slot == null || slot.IsCenter)
+            {
+                continue;
+            }
+
+            int s = (int)slot.Side;
+
+            if (s < 0 || s >= 6 || hasSide[s])
+            {
+                continue;
+            }
+
+            Vector3 local = toLocal.MultiplyPoint3x4(slot.transform.position);
+            local.y = 0f;
+
+            sides[s] = local;
+            hasSide[s] = true;
+            centre += local;
+            count++;
+        }
+
+        if (count < 2)
+        {
+            return false;
+        }
+
+        centre /= count;
+
+        // Apothem = centre-to-edge distance. For a regular hexagon apothem =
+        // (sqrt(3) / 2) * size, so size = apothem * 2 / sqrt(3). Averaging over all
+        // present anchors smooths out small authoring imprecision.
+        float apothemSum = 0f;
+
+        for (int s = 0; s < 6; s++)
+        {
+            if (hasSide[s])
+            {
+                apothemSum += Vector3.Distance(sides[s], centre);
+            }
+        }
+
+        float apothem = apothemSum / count;
+
+        if (apothem <= 0f)
+        {
+            return false;
+        }
+
+        hexSize = apothem * 2f / Mathf.Sqrt(3f);
+        return true;
+    }
+
+    private static bool TryMeasureFromRendererBounds(
+        GameObject tileInstance,
+        Transform referenceParent,
+        out float hexSize)
+    {
+        hexSize = 0f;
 
         Renderer[] renderers = tileInstance.GetComponentsInChildren<Renderer>();
 
