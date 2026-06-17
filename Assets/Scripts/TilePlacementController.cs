@@ -48,7 +48,7 @@ public class TilePlacementController : MonoBehaviour
 
         HexCoord startCoord = new HexCoord(0, 0);
 
-        TileData startTileData = currentTileController.GenerateRandomTileData();
+        TileData startTileData = CreatePlainTileData();
 
         PlaceTile(
             currentTileController.BaseTilePrefab,
@@ -147,6 +147,21 @@ public class TilePlacementController : MonoBehaviour
             availableCellManager.AvailableCells,
             this
         );
+    }
+
+    // The starting tile in the middle of the board is always fully Plain
+    // (center and all six sides), instead of a random tile.
+    private TileData CreatePlainTileData()
+    {
+        TileData tileData = new TileData();
+        tileData.Center = TerrainType.Plain;
+
+        for (int side = 0; side < 6; side++)
+        {
+            tileData.SetSide(side, TerrainType.Plain);
+        }
+
+        return tileData;
     }
 
     private void PlaceTile(
